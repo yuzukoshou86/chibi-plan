@@ -28,6 +28,37 @@ startBtn.addEventListener("click", () => {
 });
 
 makePlanBtn.addEventListener("click", () => {
+  const selectedMood = document.querySelector(".mood.selected");
+  const selectedTripType = document.querySelector(".trip-type.selected");
+
+  const startPlace = document.getElementById("startPlace").value;
+  const people = document.getElementById("peopleText").textContent;
+  const budget = document.getElementById("budgetText").textContent;
+
+  const dayHours = document.getElementById("dayHours");
+  const stayNights = document.getElementById("stayNights");
+
+  let tripDetail = "";
+
+  if (selectedTripType.dataset.type === "day") {
+    tripDetail = dayHours.value;
+  } else {
+    tripDetail = stayNights.value;
+  }
+
+  const condition = {
+    startPlace: startPlace || "未入力",
+    mood: selectedMood ? selectedMood.textContent : "未選択",
+    people: people,
+    tripType: selectedTripType.textContent,
+    tripDetail: tripDetail,
+    budget: budget
+  };
+
+  const prompt = createPrompt(condition);
+
+  console.log(prompt);
+
   showScreen(proposalScreen);
 });
 
