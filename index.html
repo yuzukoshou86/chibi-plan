@@ -31,15 +31,27 @@
     <section id="conditionScreen" class="screen">
       <h2>どんなおでかけにする？</h2>
 
+      <!-- 修正：気分を二軸に変更 -->
       <div class="card">
-        <label>どんな気分？</label>
-        <div class="mood-grid">
-          <button class="mood">癒されたい</button>
-          <button class="mood">美味しいもの食べたい</button>
-          <button class="mood">自然を見たい</button>
-          <button class="mood">体を動かしたい</button>
-          <button class="mood">誰かと遊びたい</button>
-          <button class="mood">非日常を味わいたい</button>
+        <p class="card-title">今日はどんな一日にしたい？</p>
+        <div class="check-grid">
+          <label class="check-item"><input type="checkbox" name="dayMood" value="癒されたい"> 🌿 癒されたい</label>
+          <label class="check-item"><input type="checkbox" name="dayMood" value="ワクワクしたい"> ✨ ワクワクしたい</label>
+          <label class="check-item"><input type="checkbox" name="dayMood" value="リフレッシュしたい"> 🍃 リフレッシュしたい</label>
+          <label class="check-item"><input type="checkbox" name="dayMood" value="学び・体験を楽しみたい"> 🎨 学び・体験を楽しみたい</label>
+          <label class="check-item"><input type="checkbox" name="dayMood" value="思い出を作りたい"> 💛 思い出を作りたい</label>
+          <label class="check-item"><input type="checkbox" name="dayMood" value="アクティブに過ごしたい"> 💪 アクティブに過ごしたい</label>
+        </div>
+      </div>
+
+      <div class="card">
+        <p class="card-title">どんな感覚を楽しみたい？</p>
+        <div class="check-grid">
+          <label class="check-item"><input type="checkbox" name="senseMood" value="綺麗な景色に出会いたい"> 👀 綺麗な景色に出会いたい</label>
+          <label class="check-item"><input type="checkbox" name="senseMood" value="心地よい香りに出会いたい"> 👃 心地よい香りに出会いたい</label>
+          <label class="check-item"><input type="checkbox" name="senseMood" value="心地よい音に出会いたい"> 👂 心地よい音に出会いたい</label>
+          <label class="check-item"><input type="checkbox" name="senseMood" value="心地よい感覚に出会いたい"> 🤲 心地よい感覚に出会いたい</label>
+          <label class="check-item"><input type="checkbox" name="senseMood" value="美味しい味に出会いたい"> 👅 美味しい味に出会いたい</label>
         </div>
       </div>
 
@@ -57,42 +69,42 @@
       </div>
 
       <div class="card schedule-card">
-  <label>予定</label>
+        <p class="card-title">予定</p>
 
-  <div class="select-row">
-    <button class="trip-type selected" data-type="day">日帰り</button>
-    <button class="trip-type" data-type="stay">お泊まり</button>
-  </div>
+        <div class="select-row">
+          <button class="trip-type selected" data-type="day">日帰り</button>
+          <button class="trip-type" data-type="stay">お泊まり</button>
+        </div>
 
-  <div id="dayOptions" class="option-box active">
-    <label>何時間？</label>
-    <select id="dayHours">
-      <option>1〜2時間</option>
-      <option>3〜4時間</option>
-      <option>5〜6時間</option>
-      <option>半日</option>
-      <option>朝から夜まで</option>
-    </select>
-  </div>
+        <div id="dayOptions" class="option-box active">
+          <label for="dayHours">何時間？</label>
+          <select id="dayHours">
+            <option>1〜2時間</option>
+            <option>3〜4時間</option>
+            <option>5〜6時間</option>
+            <option>半日</option>
+            <option>朝から夜まで</option>
+          </select>
+        </div>
 
-  <div id="stayOptions" class="option-box">
-    <label>何泊？</label>
-    <select id="stayNights">
-      <option>1泊2日</option>
-      <option>2泊3日</option>
-      <option>3泊4日</option>
-      <option>4泊以上</option>
-    </select>
+        <div id="stayOptions" class="option-box">
+          <label for="stayNights">何泊？</label>
+          <select id="stayNights">
+            <option>1泊2日</option>
+            <option>2泊3日</option>
+            <option>3泊4日</option>
+            <option>4泊以上</option>
+          </select>
 
-    <div class="hotel-check">
-      <span>宿泊先も提案する？</span>
-      <div>
-        <button class="hotel-btn selected">する</button>
-        <button class="hotel-btn">しない</button>
+          <div class="hotel-check">
+            <span>宿泊先も提案する？</span>
+            <div>
+              <button class="hotel-btn selected">する</button>
+              <button class="hotel-btn">しない</button>
+            </div>
+          </div>
+        </div>
       </div>
-    </div>
-  </div>
-</div>
 
       <div class="card">
         <label for="budgetRange">予算</label>
@@ -103,8 +115,13 @@
       </div>
 
       <button id="makePlanBtn" class="main-btn">
-        提案してもらう
+        スケジュール作成
       </button>
+
+      <!-- 追加：画面上にプロンプト表示 -->
+      <div id="promptResult" class="prompt-result">
+        <p class="prompt-placeholder">ここに生成されたプロンプトが表示されます。</p>
+      </div>
     </section>
 
     <!-- 提案画面 -->
@@ -139,7 +156,8 @@
     </section>
 
   </main>
-  <script src="prompt.js"></script>
+
+  <!-- prompt.jsは不要。固定プロンプトはscript.js内で管理 -->
   <script src="script.js"></script>
 </body>
 </html>
