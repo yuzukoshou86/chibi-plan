@@ -91,15 +91,7 @@
         </div>
       </div>
 
-      <div class="card">
-        <p class="card-title">おでかけ時間</p>
-
-        <div class="select-row">
-          <button class="start-type selected" data-start-type="now">今から出発</button>
-          <button class="start-type" data-start-type="select">時間を指定する</button>
-        </div>
-
-        <div class="card">
+<div class="card">
   <p class="card-title">おでかけ時間</p>
 
   <div class="select-row">
@@ -127,6 +119,14 @@
 
   <p class="helper-text">出発地点を出てから、出発地点へ戻るまでの時間です。</p>
 </div>
+
+      <div class="card">
+        <label for="budgetRange">予算</label>
+        <div class="range-row">
+          <input id="budgetRange" type="range" min="1000" max="50000" step="1000" value="10000" />
+          <span id="budgetText">10,000円</span>
+        </div>
+      </div>
 
       <p id="formMessage" class="form-message">すべての項目を入力してください。</p>
 
