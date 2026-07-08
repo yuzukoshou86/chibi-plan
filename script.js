@@ -13,11 +13,19 @@ const budgetRange = document.getElementById("budgetRange");
 const budgetText = document.getElementById("budgetText");
 
 const tripButtons = document.querySelectorAll(".trip-type");
-const dayOptions = document.getElementById("dayOptions");
 const stayOptions = document.getElementById("stayOptions");
 const hotelButtons = document.querySelectorAll(".hotel-btn");
 
+const startTypeButtons = document.querySelectorAll(".start-type");
+const startTimeBox = document.getElementById("startTimeBox");
+const startTimeSelect = document.getElementById("startTime");
+const endTimeSelect = document.getElementById("endTime");
+
+const startPlaceInput = document.getElementById("startPlace");
+const formMessage = document.getElementById("formMessage");
 const promptResult = document.getElementById("promptResult");
+
+const senseRandom = document.getElementById("senseRandom");
 
 /* 固定プロンプト */
 const FIXED_PROMPT = `
@@ -55,146 +63,249 @@ const FIXED_PROMPT = `
 ・タスクは“やらなきゃいけないこと”ではなく、“楽しみ方のヒント”として提案してください
 `;
 
-/* 画面切り替え */
 function showScreen(screen) {
   homeScreen.classList.remove("active");
   conditionScreen.classList.remove("active");
   proposalScreen.classList.remove("active");
-
   screen.classList.add("active");
 }
 
-/* チェックされた値を配列で取得 */
+function createTimeOptions() {
+  const times = [];
+
+  for (let hour = 0; hour < 24; hour++) {
+    for (let minute = 0; minute < 60; minute += 15) {
+      const hh = String(hour).padStart(2, "0");
+      const mm = String(minute).padStart(2, "0");
+      times.push(`${hh}:${mm}`);
+    }
+  }
+
+  startTimeSelect.innerHTML = `<option value="">選択してください</option>`;
+  endTimeSelect.innerHTML = `<option value="">選択してください</option>`;
+
+  times.forEach((time) => {
+    startTimeSelect.insertAdjacentHTML("beforeend", `<option value="${time}">${time}</option>`);
+    endTimeSelect.insertAdjacentHTML("beforeend", `<option value="${time}">${time}</option>`);
+  });
+
+  startTimeSelect.value = "09:00";
+  endTimeSelect.value = "";
+}
+
+function getCurrentRoundedTime() {
+  const now = new Date();
+  const minutes = now.getMinutes();
+  const roundedMinutes = Math.ceil(minutes / 15) * 15;
+
+  if (roundedMinutes === 60) {
+    now.setHours(now.getHours() + 1);
+    now.setMinutes(0);
+  } else {
+    now.setMinutes(roundedMinutes);
+  }
+
+  const hh = String(now.getHours()).padStart(2, "0");
+  const mm = String(now.getMinutes()).padStart(2, "0");
+  return `${hh}:${mm}`;
+}
+
 function getCheckedValues(name) {
   return Array.from(document.querySelectorAll(`input[name="${name}"]:checked`))
     .map((input) => input.value);
 }
 
-/* 配列をプロンプト用の箇条書きにする */
-function formatList(items) {
-  if (items.length === 0) {
-    return "・未選択";
-  }
-
-  return items.map((item) => `・${item}`).join("\n");
+function getSelectedButtonText(selector) {
+  const selected = document.querySelector(selector);
+  return selected ? selected.textContent.trim() : "";
 }
 
-/* ユーザー条件を取得 */
 function getUserCondition() {
   const selectedTripType = document.querySelector(".trip-type.selected");
   const selectedHotel = document.querySelector(".hotel-btn.selected");
+  const selectedStartType = document.querySelector(".start-type.selected");
 
-  const startPlace = document.getElementById("startPlace").value;
-  const people = peopleText.textContent;
-  const budget = budgetText.textContent;
+  const tripType = selectedTripType ? selectedTripType.textContent.trim() : "";
+  const startType = selectedStartType ? selectedStartType.textContent.trim() : "";
+  const startTypeValue = selectedStartType ? selectedStartType.dataset.startType : "";
 
-  const dayHours = document.getElementById("dayHours");
-  const stayNights = document.getElementById("stayNights");
+  const condition = {
+    dayTheme: getCheckedValues("dayMood"),
+    senses: getCheckedValues("senseMood"),
+    departure: startPlaceInput.value.trim(),
+    people: peopleText.textContent,
+    budget: budgetText.textContent,
+    tripType: tripType,
+    startType: startType,
+    startTime: startTypeValue === "now" ? getCurrentRoundedTime() : startTimeSelect.value,
+    endTime: endTimeSelect.value
+  };
 
-  let tripDetail = "";
-  let hotelSuggestion = "対象外";
-
-  if (selectedTripType.dataset.type === "day") {
-    tripDetail = dayHours.value;
+  if (tripType === "お泊まり") {
+    condition.stayNights = document.getElementById("stayNights").value;
+    condition.hotelSuggestion = selectedHotel ? selectedHotel.textContent.trim() : "";
   } else {
-    tripDetail = stayNights.value;
-    hotelSuggestion = selectedHotel ? selectedHotel.textContent : "未選択";
+    condition.stayNights = "";
+    condition.hotelSuggestion = "対象外";
   }
 
+  return condition;
+}
+
+function createPromptText(condition) {
+  return `
+【ユーザーの条件】
+出発地：${condition.departure}
+人数：${condition.people}
+予定：${condition.tripType}
+予算：${condition.budget}
+出発タイプ：${condition.startType}
+出発時間：${condition.startTime}
+終了時間：${condition.endTime}
+宿泊日数：${condition.stayNights || "対象外"}
+宿泊先の提案：${condition.hotelSuggestion}
+
+【今日はどんな一日にしたい？】
+${condition.dayTheme.map((item) => `・${item}`).join("\n")}
+
+【どんな感覚を楽しみたい？】
+${condition.senses.includes("おまかせ")
+    ? "・おまかせ（五感の指定なし）"
+    : condition.senses.map((item) => `・${item}`).join("\n")}
+
+${FIXED_PROMPT}
+`.trim();
+}
+
+function createPromptJson(condition) {
   return {
-    startPlace: startPlace || "未入力",
-    dayMoods: getCheckedValues("dayMood"),
-    senseMoods: getCheckedValues("senseMood"),
-    people: people,
-    tripType: selectedTripType.textContent,
-    tripDetail: tripDetail,
-    hotelSuggestion: hotelSuggestion,
-    budget: budget
+    serviceName: "ちびプラン",
+    conditions: condition,
+    prompt: createPromptText(condition)
   };
 }
 
-/* プロンプト生成 */
-function createPrompt(condition) {
-  const variablePrompt = `
-【ユーザーの条件】
-出発地：${condition.startPlace}
-人数：${condition.people}
-予定：${condition.tripType}
-時間・宿泊：${condition.tripDetail}
-宿泊先の提案：${condition.hotelSuggestion}
-予算：${condition.budget}
+function validateForm() {
+  const selectedStartType = document.querySelector(".start-type.selected");
+  const startTypeValue = selectedStartType ? selectedStartType.dataset.startType : "";
 
-【今日はどんな一日にしたい？】
-${formatList(condition.dayMoods)}
+  const isValid =
+    getCheckedValues("dayMood").length > 0 &&
+    getCheckedValues("senseMood").length > 0 &&
+    startPlaceInput.value.trim() !== "" &&
+    peopleText.textContent !== "" &&
+    budgetText.textContent !== "" &&
+    getSelectedButtonText(".trip-type.selected") !== "" &&
+    endTimeSelect.value !== "" &&
+    (startTypeValue === "now" || startTimeSelect.value !== "");
 
-【どんな感覚を楽しみたい？】
-${formatList(condition.senseMoods)}
-`;
-
-  return `${variablePrompt}
-
-${FIXED_PROMPT}`.trim();
+  makePlanBtn.disabled = !isValid;
+  formMessage.textContent = isValid
+    ? "入力できました。スケジュール作成できます。"
+    : "すべての項目を入力してください。";
 }
 
-/* 後でAI APIへ送るとき用 */
-function sendToAI(prompt) {
-  console.log("AIへ送信予定のプロンプト:", prompt);
+function sendToAI(promptJson) {
+  console.log("AIへ送信予定のJSON:", promptJson);
 }
 
-/* ホーム → 条件設定 */
 startBtn.addEventListener("click", () => {
   showScreen(conditionScreen);
+  validateForm();
 });
 
-/* スケジュール作成 */
 makePlanBtn.addEventListener("click", () => {
   const condition = getUserCondition();
-  const prompt = createPrompt(condition);
+  const promptJson = createPromptJson(condition);
+  const jsonText = JSON.stringify(promptJson, null, 2);
 
   promptResult.innerHTML = `
-    <h3>生成されたプロンプト</h3>
-    <pre>${prompt}</pre>
+    <h3>生成されたJSON</h3>
+    <pre>${jsonText}</pre>
   `;
 
-  sendToAI(prompt);
+  sendToAI(promptJson);
 });
 
-/* 提案画面 → 条件設定 */
 backBtn.addEventListener("click", () => {
   showScreen(conditionScreen);
 });
 
-/* 人数スライダー */
 peopleRange.addEventListener("input", () => {
   peopleText.textContent = `${peopleRange.value}人`;
+  validateForm();
 });
 
-/* 予算スライダー */
 budgetRange.addEventListener("input", () => {
   const budget = Number(budgetRange.value).toLocaleString();
   budgetText.textContent = `${budget}円`;
+  validateForm();
 });
 
-/* 日帰り・お泊まり切り替え */
 tripButtons.forEach((button) => {
   button.addEventListener("click", () => {
     tripButtons.forEach((btn) => btn.classList.remove("selected"));
     button.classList.add("selected");
 
-    if (button.dataset.type === "day") {
-      dayOptions.classList.add("active");
-      stayOptions.classList.remove("active");
-    } else {
+    if (button.dataset.type === "stay") {
       stayOptions.classList.add("active");
-      dayOptions.classList.remove("active");
+    } else {
+      stayOptions.classList.remove("active");
     }
+
+    validateForm();
   });
 });
 
-/* 宿泊先提案の切り替え */
 hotelButtons.forEach((button) => {
   button.addEventListener("click", () => {
     hotelButtons.forEach((btn) => btn.classList.remove("selected"));
     button.classList.add("selected");
+    validateForm();
   });
 });
+
+startTypeButtons.forEach((button) => {
+  button.addEventListener("click", () => {
+    startTypeButtons.forEach((btn) => btn.classList.remove("selected"));
+    button.classList.add("selected");
+
+    if (button.dataset.startType === "select") {
+      startTimeBox.classList.remove("hidden");
+    } else {
+      startTimeBox.classList.add("hidden");
+    }
+
+    validateForm();
+  });
+});
+
+/* おまかせ選択時は他の五感を解除 */
+document.querySelectorAll('input[name="senseMood"]').forEach((checkbox) => {
+  checkbox.addEventListener("change", () => {
+    const senseCheckboxes = Array.from(document.querySelectorAll('input[name="senseMood"]'));
+
+    if (checkbox.value === "おまかせ" && checkbox.checked) {
+      senseCheckboxes.forEach((item) => {
+        if (item.value !== "おまかせ") item.checked = false;
+      });
+    }
+
+    if (checkbox.value !== "おまかせ" && checkbox.checked) {
+      senseRandom.checked = false;
+    }
+
+    validateForm();
+  });
+});
+
+document.querySelectorAll('input[name="dayMood"]').forEach((checkbox) => {
+  checkbox.addEventListener("change", validateForm);
+});
+
+startPlaceInput.addEventListener("input", validateForm);
+startTimeSelect.addEventListener("change", validateForm);
+endTimeSelect.addEventListener("change", validateForm);
+
+createTimeOptions();
+validateForm();

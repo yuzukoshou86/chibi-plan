@@ -2,6 +2,11 @@
   box-sizing: border-box;
 }
 
+html,
+body {
+  overflow-x: hidden;
+}
+
 body {
   margin: 0;
   font-family: "Hiragino Maru Gothic ProN", "Yu Gothic", sans-serif;
@@ -50,7 +55,7 @@ h1 {
 }
 
 h2 {
-  font-size: 32px;
+  font-size: clamp(24px, 6vw, 32px);
   margin-bottom: 20px;
 }
 
@@ -70,11 +75,20 @@ h2 {
   box-shadow: 0 8px 0 #4f8f3d;
   cursor: pointer;
   transition: 0.2s;
+  max-width: 100%;
+  white-space: normal;
+  text-align: center;
 }
 
-.main-btn:hover {
+.main-btn:hover:not(:disabled) {
   transform: translateY(3px);
   box-shadow: 0 5px 0 #4f8f3d;
+}
+
+.main-btn:disabled {
+  background: #b8b8b8;
+  box-shadow: 0 8px 0 #8d8d8d;
+  cursor: not-allowed;
 }
 
 .home-menu {
@@ -84,8 +98,8 @@ h2 {
 }
 
 .home-menu button,
-.mood,
 .trip-type,
+.start-type,
 .back-btn {
   border: none;
   background: #fffaf0;
@@ -94,6 +108,9 @@ h2 {
   border-radius: 999px;
   box-shadow: 0 4px 0 #d6c49c;
   cursor: pointer;
+  max-width: 100%;
+  white-space: normal;
+  text-align: center;
 }
 
 .card {
@@ -105,37 +122,61 @@ h2 {
   box-shadow: 0 8px 16px rgba(79, 68, 43, 0.12);
 }
 
+.card-title,
 label {
   display: block;
   font-weight: bold;
-  margin-bottom: 14px;
+  margin: 0 0 14px;
   font-size: 18px;
 }
 
-input[type="text"] {
+input[type="text"],
+select {
   width: 100%;
   padding: 16px;
   border: 2px solid #d6c49c;
   border-radius: 18px;
   font-size: 16px;
+  background: #fffef8;
 }
 
-.mood-grid {
+.check-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 14px;
 }
 
-.mood.selected,
-.trip-type.selected {
-  background: #ffd86b;
-  box-shadow: 0 4px 0 #d4a93d;
+.check-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #fffef8;
+  border: 2px solid #d6c49c;
+  border-radius: 22px;
+  padding: 12px 16px;
+  font-size: 16px;
+  cursor: pointer;
+  margin: 0;
+  line-height: 1.5;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
+
+.check-item input {
+  flex-shrink: 0;
+  accent-color: #7bb661;
 }
 
 .range-row {
   display: flex;
   align-items: center;
   gap: 18px;
+}
+
+.range-row span {
+  min-width: 80px;
+  text-align: right;
+  font-weight: bold;
 }
 
 input[type="range"] {
@@ -146,6 +187,101 @@ input[type="range"] {
 .select-row {
   display: flex;
   gap: 14px;
+}
+
+.trip-type,
+.start-type {
+  flex: 1;
+}
+
+.trip-type.selected,
+.start-type.selected,
+.hotel-btn.selected {
+  background: #ffd86b;
+  box-shadow: 0 4px 0 #d4a93d;
+}
+
+.option-box {
+  display: none;
+  margin-top: 18px;
+  padding: 16px;
+  background: #fffaf0;
+  border: 2px dashed #d6c49c;
+  border-radius: 20px;
+}
+
+.option-box.active {
+  display: block;
+}
+
+.hotel-check {
+  margin-top: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.hotel-check div {
+  display: flex;
+  gap: 12px;
+}
+
+.hotel-btn {
+  flex: 1;
+  border: none;
+  padding: 12px;
+  border-radius: 999px;
+  background: #fffef8;
+  box-shadow: 0 4px 0 #d6c49c;
+  cursor: pointer;
+}
+
+.time-box {
+  margin-top: 18px;
+}
+
+.hidden {
+  display: none;
+}
+
+.helper-text,
+.form-message {
+  font-size: 14px;
+  color: #6b8f46;
+  line-height: 1.6;
+}
+
+.form-message {
+  font-weight: bold;
+  margin: 0 0 12px;
+}
+
+.prompt-result {
+  margin-top: 24px;
+  background: #fffef8;
+  border: 3px dashed #d6c49c;
+  border-radius: 24px;
+  padding: 20px;
+  line-height: 1.8;
+  box-shadow: 0 8px 16px rgba(79, 68, 43, 0.12);
+  max-width: 100%;
+}
+
+.prompt-result h3 {
+  margin-top: 0;
+}
+
+.prompt-result pre {
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  margin: 0;
+  font-size: 14px;
+}
+
+.prompt-placeholder {
+  color: #8a7b64;
+  margin: 0;
 }
 
 .proposal-header {
@@ -194,55 +330,6 @@ input[type="range"] {
   margin: 0 0 16px;
 }
 
-.option-box {
-  display: none;
-  margin-top: 18px;
-  padding: 16px;
-  background: #fffaf0;
-  border: 2px dashed #d6c49c;
-  border-radius: 20px;
-}
-
-.option-box.active {
-  display: block;
-}
-
-.option-box select {
-  width: 100%;
-  padding: 14px;
-  border-radius: 999px;
-  border: 2px solid #d6c49c;
-  background: #fffef8;
-  font-size: 16px;
-  text-align: center;
-}
-
-.hotel-check {
-  margin-top: 18px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.hotel-check div {
-  display: flex;
-  gap: 12px;
-}
-
-.hotel-btn {
-  flex: 1;
-  border: none;
-  padding: 12px;
-  border-radius: 999px;
-  background: #fffef8;
-  box-shadow: 0 4px 0 #d6c49c;
-}
-
-.hotel-btn.selected {
-  background: #ffd86b;
-  box-shadow: 0 4px 0 #d4a93d;
-}
-
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -264,69 +351,73 @@ input[type="range"] {
 }
 
 @media (max-width: 800px) {
+  .app {
+    padding: 16px;
+  }
+
+  .hero {
+    min-height: 80vh;
+  }
+
+  .card {
+    padding: 18px;
+    border-radius: 22px;
+  }
+
+  .home-menu,
+  .select-row,
+  .proposal-header {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .home-menu button,
+  .main-btn,
+  .trip-type,
+  .start-type,
+  .back-btn {
+    width: 100%;
+  }
+
+  .check-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .range-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .range-row span {
+    text-align: left;
+  }
+
   .proposal-area {
     grid-template-columns: 1fr;
   }
 
-  .proposal-header {
-    flex-direction: column;
-  }
-
-  .home-menu,
-  .select-row {
-    flex-direction: column;
-    width: 100%;
+  .plan-card {
+    min-height: 280px;
   }
 }
 
-/* 追加：チェックボックス項目 */
-.card-title {
-  display: block;
-  font-weight: bold;
-  margin: 0 0 14px;
-  font-size: 18px;
-}
+@media (max-width: 420px) {
+  .app {
+    padding: 12px;
+  }
 
-.check-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 14px;
-}
+  .card {
+    padding: 14px;
+  }
 
-.check-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  background: #fffef8;
-  border: 2px solid #d6c49c;
-  border-radius: 999px;
-  padding: 12px 16px;
-  font-size: 16px;
-  cursor: pointer;
-  margin: 0;
-}
+  .check-item {
+    font-size: 15px;
+    padding: 10px 12px;
+  }
 
-.check-item input {
-  accent-color: #7bb661;
-}
-
-/* 追加：生成プロンプト表示欄 */
-.prompt-result {
-  margin-top: 24px;
-  background: #fffef8;
-  border: 3px dashed #d6c49c;
-  border-radius: 24px;
-  padding: 20px;
-  white-space: pre-wrap;
-  line-height: 1.8;
-  box-shadow: 0 8px 16px rgba(79, 68, 43, 0.12);
-}
-
-.prompt-result h3 {
-  margin-top: 0;
-}
-
-.prompt-placeholder {
-  color: #8a7b64;
-  margin: 0;
+  .main-btn {
+    font-size: 18px;
+    padding: 16px 24px;
+  }
 }
