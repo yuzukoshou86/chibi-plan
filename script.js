@@ -21,6 +21,11 @@ const startTimeBox = document.getElementById("startTimeBox");
 const startTimeSelect = document.getElementById("startTime");
 const endTimeSelect = document.getElementById("endTime");
 
+const startHourWheel = document.getElementById("startHourWheel");
+const startMinuteWheel = document.getElementById("startMinuteWheel");
+const endHourWheel = document.getElementById("endHourWheel");
+const endMinuteWheel = document.getElementById("endMinuteWheel");
+
 const startPlaceInput = document.getElementById("startPlace");
 const formMessage = document.getElementById("formMessage");
 const promptResult = document.getElementById("promptResult");
@@ -31,38 +36,77 @@ const senseRandom = document.getElementById("senseRandom");
 const FIXED_PROMPT = `
 あなたは「ちびプラン」のおでかけプランナーです。
 
-ユーザーの条件をもとに、現実的で楽しいおでかけスケジュールを作成してください。
+ユーザーの条件をもとに、現実的でワクワクする一日のおでかけプランを作成してください。
 
 【サービス方針】
-・新しい発見、新しい体験につながる提案をしてください
-・行き先だけでなく、その場所で何を楽しむかも提案してください
-・外に出たいけど何をしたらいいかわからない人に向けて、楽しみ方を具体的に提案してください
 
-【作成ルール】
-・予算内に収めてください
-・移動時間を考慮してください
-・無理のないスケジュールにしてください
-・休憩時間を入れてください
-・営業時間が不明な場所は無理に提案しないでください
+・新しい発見、新しい体験につながる提案をしてください。
+・行き先だけでなく、その場所で何を楽しめるのかも提案してください。
+・外に出たいけれど何をしたらいいかわからない人が、「今日はこれをしてみよう」と思える一日を設計してください。
+・近くで済ませることを目的とせず、条件の範囲内で少しでもワクワクする体験を優先してください。
+・「また出かけたい」と思える満足度の高い一日を目指してください。
+・「どこへ行くか」ではなく、「どんな一日を過ごせるか」を大切にしてください。
 
-【文章ルール】
-・です・ます調で書いてください
-・一人称は使わないでください
-・語尾を統一してください
-・親しみやすく、わかりやすい文章にしてください
+【優先順位】
+
+1. ユーザーが選択した条件（出発地・人数・予算・時間・宿泊条件・今日の気分・楽しみたい感覚など）は必ず守ってください。
+2. 営業時間・定休日・移動時間・交通費を考慮し、現実的に実行できるプランにしてください。
+3. 「また出かけたい」と思える満足度の高い一日を優先してください。
+4. 新しい発見やワクワクにつながる体験を優先してください。
+5. 行き先は出発地周辺だけで探さず、予算・移動時間・滞在時間を考慮したうえで、実現可能な範囲を幅広く検討してください。
+6. 条件を満たす候補が複数ある場合は、複数のエリアを比較し、その中から最も満足度が高いプランを選択してください。
+7. 時間と予算に余裕がある場合は、一つのエリアだけで完結させる必要はありません。電車や車で別エリアへ移動し、街並みや景色、雰囲気の違いも楽しめる一日にしてください。
+8. 条件を満たす候補が複数ある場合は、出発地から最も近い場所ではなく、「自分では思いつかなかった」「行ってみたい」と感じられる場所を優先してください。
+9. 定番スポットだけに偏らず、穴場・隠れ家・珍しい体験も積極的に検討してください。
+10. 同じ条件でも毎回できるだけ異なる場所や体験になるよう工夫してください。
+
+【行き先の選定】
+
+・行き先を決定する前に、条件を満たす複数のエリアを比較してください。
+・探索範囲は出発地周辺に限定せず、条件内で訪問できる範囲全体から候補を探してください。
+・近いからという理由だけで選ばず、一日の満足度が高くなる場所を選択してください。
+・時間に余裕がある場合は、ユーザーが普段あまり訪れない街やエリアも積極的に候補へ含めてください。
+・移動そのものが景色や雰囲気の変化を楽しめる場合は、その価値も考慮してください。
+
+【スポットの提案方法】
+
+・できるだけ具体的な施設名・店舗名・スポット名を提案してください。
+・施設名だけでなく、その場所で何を楽しめるのかも説明してください。
+・店舗名が特定できない場合のみ、「商店街で食べ歩き」「アロマ専門店巡り」などエリア単位の提案をしてください。
+・営業時間や営業状況が確認できない施設はメインプランへ入れないでください。
+
+【スケジュール構成】
+
+・景色・食事・体験・休憩のバランスを意識してください。
+・同じ種類の施設ばかり続かないようにしてください。
+・朝・昼・夕方・夜で雰囲気が変わるよう工夫してください。
+・無理な移動は避けつつ、移動によって新しい景色や街の雰囲気を楽しめる場合は積極的に取り入れてください。
+・休憩時間を適度に設けてください。
 
 【ちびプランらしさ】
-・有名スポットだけでなく、穴場・隠れ家・少し珍しい体験も1つ以上含めてください
-・ただし、営業情報が不確かな場所や閉業の可能性がある場所はメインプランに入れないでください
-・ユーザーが「自分では思いつかなかった」と感じる提案を含めてください
+
+・ユーザーが「こんな場所知らなかった」「こんな楽しみ方があるんだ」と感じられる提案を含めてください。
+・検索すれば誰でも出てくる定番コースではなく、条件に合う複数の候補を比較したうえで、ちびプランならではの一日を提案してください。
+・ただ目的地を並べるのではなく、一日を通して冒険や発見を感じられる流れを意識してください。
+・効率よく回ることよりも、「今日は本当に楽しかった」と思える体験を優先してください。
 
 【外出先タスク】
-・各スポットごとに、ユーザーがその場所で楽しめる小さなタスクを1つ提案してください
-・タスクは難しすぎず、ひとりでも実行しやすい内容にしてください
-・例：「今日いちばん好きな景色を1枚撮る」「地元のお店で気になる商品を1つ見つける」「ベンチで5分ぼーっとする」
-・タスクは“やらなきゃいけないこと”ではなく、“楽しみ方のヒント”として提案してください
+
+・各スポットごとに、その場所だからこそ楽しめる小さなタスクを1つ提案してください。
+・タスクは難しすぎず、一人でも気軽に実行できる内容にしてください。
+・「やらなければいけないこと」ではなく、「楽しみ方のヒント」として提案してください。
+・例：「今日いちばん好きな景色を1枚撮る」「地元のお店で気になる商品を1つ見つける」「5分だけ目を閉じて街の音を聞いてみる」
+
+【文章ルール】
+
+・です・ます調で書いてください。
+・親しみやすく、読みやすい文章にしてください。
+・語尾を統一してください。
+・一人称は使わないでください。
+・情報量は十分に保ちながら、不要な説明は省き、見やすく整理してください。
 `;
 
+/* 画面切り替え */
 function showScreen(screen) {
   homeScreen.classList.remove("active");
   conditionScreen.classList.remove("active");
@@ -70,29 +114,102 @@ function showScreen(screen) {
   screen.classList.add("active");
 }
 
-function createTimeOptions() {
-  const times = [];
+/* ホイールの中身を作る */
+function createWheelItems(container, values) {
+  container.innerHTML = "";
 
-  for (let hour = 0; hour < 24; hour++) {
-    for (let minute = 0; minute < 60; minute += 15) {
-      const hh = String(hour).padStart(2, "0");
-      const mm = String(minute).padStart(2, "0");
-      times.push(`${hh}:${mm}`);
-    }
-  }
-
-  startTimeSelect.innerHTML = `<option value="">選択してください</option>`;
-  endTimeSelect.innerHTML = `<option value="">選択してください</option>`;
-
-  times.forEach((time) => {
-    startTimeSelect.insertAdjacentHTML("beforeend", `<option value="${time}">${time}</option>`);
-    endTimeSelect.insertAdjacentHTML("beforeend", `<option value="${time}">${time}</option>`);
+  values.forEach((value) => {
+    const item = document.createElement("div");
+    item.className = "wheel-item";
+    item.textContent = value;
+    item.dataset.value = value;
+    container.appendChild(item);
   });
-
-  startTimeSelect.value = "09:00";
-  endTimeSelect.value = "";
 }
 
+/* ホイール中央にある項目を取得 */
+function getCenterItem(container) {
+  const items = Array.from(container.querySelectorAll(".wheel-item"));
+  const containerCenter = container.getBoundingClientRect().top + container.clientHeight / 2;
+
+  let closestItem = items[0];
+  let closestDistance = Infinity;
+
+  items.forEach((item) => {
+    const itemCenter = item.getBoundingClientRect().top + item.clientHeight / 2;
+    const distance = Math.abs(containerCenter - itemCenter);
+
+    if (distance < closestDistance) {
+      closestDistance = distance;
+      closestItem = item;
+    }
+  });
+
+  return closestItem;
+}
+
+/* 選択中の見た目を更新 */
+function updateWheelSelected(container) {
+  const items = container.querySelectorAll(".wheel-item");
+  const selectedItem = getCenterItem(container);
+
+  items.forEach((item) => item.classList.remove("selected"));
+  selectedItem.classList.add("selected");
+
+  updateHiddenTimes();
+  validateForm();
+}
+
+/* hidden input に時間を入れる */
+function updateHiddenTimes() {
+  const startHour = getCenterItem(startHourWheel).dataset.value;
+  const startMinute = getCenterItem(startMinuteWheel).dataset.value;
+  const endHour = getCenterItem(endHourWheel).dataset.value;
+  const endMinute = getCenterItem(endMinuteWheel).dataset.value;
+
+  startTimeSelect.value = `${startHour}:${startMinute}`;
+  endTimeSelect.value = `${endHour}:${endMinute}`;
+}
+
+/* 指定した時間へスクロール */
+function scrollToValue(container, value) {
+  const item = container.querySelector(`[data-value="${value}"]`);
+  if (!item) return;
+
+  container.scrollTop = item.offsetTop - container.clientHeight / 2 + item.clientHeight / 2;
+  updateWheelSelected(container);
+}
+
+/* 時間ホイール作成 */
+function createTimeOptions() {
+  const hours = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, "0"));
+  const minutes = ["00", "15", "30", "45"];
+
+  createWheelItems(startHourWheel, hours);
+  createWheelItems(startMinuteWheel, minutes);
+  createWheelItems(endHourWheel, hours);
+  createWheelItems(endMinuteWheel, minutes);
+
+  [startHourWheel, startMinuteWheel, endHourWheel, endMinuteWheel].forEach((wheel) => {
+    wheel.addEventListener("scroll", () => {
+      clearTimeout(wheel.scrollTimer);
+      wheel.scrollTimer = setTimeout(() => {
+        updateWheelSelected(wheel);
+      }, 80);
+    });
+  });
+
+  setTimeout(() => {
+    scrollToValue(startHourWheel, "09");
+    scrollToValue(startMinuteWheel, "00");
+    scrollToValue(endHourWheel, "17");
+    scrollToValue(endMinuteWheel, "00");
+    updateHiddenTimes();
+    validateForm();
+  }, 0);
+}
+
+/* 今から出発の場合の現在時刻 15分丸め */
 function getCurrentRoundedTime() {
   const now = new Date();
   const minutes = now.getMinutes();
@@ -110,6 +227,7 @@ function getCurrentRoundedTime() {
   return `${hh}:${mm}`;
 }
 
+/* チェックされた値を取得 */
 function getCheckedValues(name) {
   return Array.from(document.querySelectorAll(`input[name="${name}"]:checked`))
     .map((input) => input.value);
@@ -120,6 +238,7 @@ function getSelectedButtonText(selector) {
   return selected ? selected.textContent.trim() : "";
 }
 
+/* 条件取得 */
 function getUserCondition() {
   const selectedTripType = document.querySelector(".trip-type.selected");
   const selectedHotel = document.querySelector(".hotel-btn.selected");
@@ -152,6 +271,7 @@ function getUserCondition() {
   return condition;
 }
 
+/* プロンプト本文作成 */
 function createPromptText(condition) {
   return `
 【ユーザーの条件】
@@ -169,14 +289,17 @@ function createPromptText(condition) {
 ${condition.dayTheme.map((item) => `・${item}`).join("\n")}
 
 【どんな感覚を楽しみたい？】
-${condition.senses.includes("おまかせ")
+${
+  condition.senses.includes("おまかせ")
     ? "・おまかせ（五感の指定なし）"
-    : condition.senses.map((item) => `・${item}`).join("\n")}
+    : condition.senses.map((item) => `・${item}`).join("\n")
+}
 
 ${FIXED_PROMPT}
 `.trim();
 }
 
+/* JSON作成 */
 function createPromptJson(condition) {
   return {
     serviceName: "ちびプラン",
@@ -185,6 +308,7 @@ function createPromptJson(condition) {
   };
 }
 
+/* 入力チェック */
 function validateForm() {
   const selectedStartType = document.querySelector(".start-type.selected");
   const startTypeValue = selectedStartType ? selectedStartType.dataset.startType : "";
@@ -205,15 +329,18 @@ function validateForm() {
     : "すべての項目を入力してください。";
 }
 
+/* 後でAI APIに送る用 */
 function sendToAI(promptJson) {
   console.log("AIへ送信予定のJSON:", promptJson);
 }
 
+/* ホーム → 条件設定 */
 startBtn.addEventListener("click", () => {
   showScreen(conditionScreen);
   validateForm();
 });
 
+/* スケジュール作成 */
 makePlanBtn.addEventListener("click", () => {
   const condition = getUserCondition();
   const promptJson = createPromptJson(condition);
@@ -227,21 +354,25 @@ makePlanBtn.addEventListener("click", () => {
   sendToAI(promptJson);
 });
 
+/* 戻る */
 backBtn.addEventListener("click", () => {
   showScreen(conditionScreen);
 });
 
+/* 人数 */
 peopleRange.addEventListener("input", () => {
   peopleText.textContent = `${peopleRange.value}人`;
   validateForm();
 });
 
+/* 予算 */
 budgetRange.addEventListener("input", () => {
   const budget = Number(budgetRange.value).toLocaleString();
   budgetText.textContent = `${budget}円`;
   validateForm();
 });
 
+/* 日帰り・お泊まり */
 tripButtons.forEach((button) => {
   button.addEventListener("click", () => {
     tripButtons.forEach((btn) => btn.classList.remove("selected"));
@@ -257,6 +388,7 @@ tripButtons.forEach((button) => {
   });
 });
 
+/* 宿泊先提案 */
 hotelButtons.forEach((button) => {
   button.addEventListener("click", () => {
     hotelButtons.forEach((btn) => btn.classList.remove("selected"));
@@ -265,6 +397,7 @@ hotelButtons.forEach((button) => {
   });
 });
 
+/* 今から出発・時間指定 */
 startTypeButtons.forEach((button) => {
   button.addEventListener("click", () => {
     startTypeButtons.forEach((btn) => btn.classList.remove("selected"));
@@ -299,13 +432,13 @@ document.querySelectorAll('input[name="senseMood"]').forEach((checkbox) => {
   });
 });
 
+/* 一日のテーマ */
 document.querySelectorAll('input[name="dayMood"]').forEach((checkbox) => {
   checkbox.addEventListener("change", validateForm);
 });
 
 startPlaceInput.addEventListener("input", validateForm);
-startTimeSelect.addEventListener("change", validateForm);
-endTimeSelect.addEventListener("change", validateForm);
 
+/* 初期処理 */
 createTimeOptions();
 validateForm();

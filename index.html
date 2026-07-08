@@ -99,26 +99,34 @@
           <button class="start-type" data-start-type="select">時間を指定する</button>
         </div>
 
-        <div id="startTimeBox" class="time-box hidden">
-          <label for="startTime">出発時間</label>
-          <select id="startTime"></select>
-        </div>
+        <div class="card">
+  <p class="card-title">おでかけ時間</p>
 
-        <div class="time-box">
-          <label for="endTime">終了時間</label>
-          <select id="endTime"></select>
-        </div>
+  <div class="select-row">
+    <button class="start-type selected" data-start-type="now">今から出発</button>
+    <button class="start-type" data-start-type="select">時間を指定する</button>
+  </div>
 
-        <p class="helper-text">出発地点を出てから、出発地点へ戻るまでの時間です。</p>
-      </div>
+  <div id="startTimeBox" class="time-box hidden">
+    <p class="card-title small-title">出発時間</p>
+    <div class="wheel-picker" data-target="startTime">
+      <div class="wheel-column" id="startHourWheel"></div>
+      <div class="wheel-column" id="startMinuteWheel"></div>
+    </div>
+    <input type="hidden" id="startTime" value="" />
+  </div>
 
-      <div class="card">
-        <label for="budgetRange">予算</label>
-        <div class="range-row">
-          <input id="budgetRange" type="range" min="1000" max="50000" step="1000" value="10000" />
-          <span id="budgetText">10,000円</span>
-        </div>
-      </div>
+  <div class="time-box">
+    <p class="card-title small-title">終了時間</p>
+    <div class="wheel-picker" data-target="endTime">
+      <div class="wheel-column" id="endHourWheel"></div>
+      <div class="wheel-column" id="endMinuteWheel"></div>
+    </div>
+    <input type="hidden" id="endTime" value="" />
+  </div>
+
+  <p class="helper-text">出発地点を出てから、出発地点へ戻るまでの時間です。</p>
+</div>
 
       <p id="formMessage" class="form-message">すべての項目を入力してください。</p>
 

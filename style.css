@@ -421,3 +421,61 @@ input[type="range"] {
     padding: 16px 24px;
   }
 }
+
+.small-title {
+  font-size: 16px;
+  margin-top: 0;
+}
+
+.wheel-picker {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  background: #fffaf0;
+  border: 2px solid #d6c49c;
+  border-radius: 24px;
+  padding: 12px;
+  height: 180px;
+  overflow: hidden;
+}
+
+.wheel-picker::before {
+  content: "";
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  top: 50%;
+  height: 44px;
+  transform: translateY(-50%);
+  background: rgba(255, 216, 107, 0.45);
+  border-radius: 999px;
+  pointer-events: none;
+}
+
+.wheel-column {
+  height: 156px;
+  overflow-y: auto;
+  scroll-snap-type: y mandatory;
+  padding: 56px 0;
+  scrollbar-width: none;
+}
+
+.wheel-column::-webkit-scrollbar {
+  display: none;
+}
+
+.wheel-item {
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  scroll-snap-align: center;
+  font-size: 28px;
+  font-weight: bold;
+  color: #8a7b64;
+}
+
+.wheel-item.selected {
+  color: #4a3b2a;
+}
