@@ -29,8 +29,11 @@ const endMinuteWheel = document.getElementById("endMinuteWheel");
 const startPlaceInput = document.getElementById("startPlace");
 const formMessage = document.getElementById("formMessage");
 const promptResult = document.getElementById("promptResult");
+const proposalLead = document.getElementById("proposalLead");
+const proposalArea = document.querySelector(".proposal-area");
 
 const senseRandom = document.getElementById("senseRandom");
+let isSubmitting = false;
 
 /* 固定プロンプト */
 const FIXED_PROMPT = `
@@ -350,8 +353,7 @@ ${FIXED_PROMPT}
 function createPromptJson(condition) {
   return {
     serviceName: "ちびプラン",
-    conditions: condition,
-    prompt: createPromptText(condition)
+    conditions: condition
   };
 }
 
@@ -370,15 +372,108 @@ function validateForm() {
     endTimeSelect.value !== "" &&
     (startTypeValue === "now" || startTimeSelect.value !== "");
 
-  makePlanBtn.disabled = !isValid;
+  makePlanBtn.disabled = isSubmitting || !isValid;
   formMessage.textContent = isValid
     ? "入力できました。スケジュール作成できます。"
     : "すべての項目を入力してください。";
 }
 
-/* 後でAI APIに送る用 */
-function sendToAI(promptJson) {
-  console.log("AIへ送信予定のJSON:", promptJson);
+function createTextElement(tagName, text, className = "") {
+  const element = document.createElement(tagName);
+  element.textContent = text;
+  if (className) element.className = className;
+  return element;
+}
+
+function showJsonSafely(value) {
+  const heading = createTextElement("h3", "生成されたJSON");
+  const pre = createTextElement("pre", JSON.stringify(value, null, 2));
+  promptResult.replaceChildren(heading, pre);
+}
+
+function renderPlan(plan) {
+  const card = document.createElement("div");
+  card.className = "plan-card generated-plan";
+  card.appendChild(createTextElement("p", "AI旅行プラン", "area-label"));
+  card.appendChild(createTextElement("h3", plan.title));
+  card.appendChild(createTextElement("p", plan.summary, "plan-summary"));
+
+  const totals = document.createElement("div");
+  totals.className = "plan-totals";
+  totals.appendChild(createTextElement("span", `合計予算（目安）: ${Number(plan.totalBudget).toLocaleString()}円`));
+  totals.appendChild(createTextElement("span", `合計時間: ${plan.totalTime}`));
+  card.appendChild(totals);
+
+  card.appendChild(createTextElement("h4", "スケジュール"));
+  const schedule = document.createElement("div");
+  schedule.className = "generated-schedule";
+
+  plan.schedule.forEach((item) => {
+    const scheduleItem = document.createElement("article");
+    scheduleItem.className = "schedule-item";
+    scheduleItem.appendChild(createTextElement("h5", `${item.time}｜${item.spot}`));
+    scheduleItem.appendChild(createTextElement("p", item.description));
+    scheduleItem.appendChild(
+      createTextElement(
+        "p",
+        `費用（目安）: ${Number(item.estimatedCost).toLocaleString()}円 ／ 移動時間: ${item.travelTime}`,
+        "schedule-meta"
+      )
+    );
+    schedule.appendChild(scheduleItem);
+  });
+
+  card.appendChild(schedule);
+  card.appendChild(createTextElement("h4", "注意事項"));
+
+  const notes = document.createElement("ul");
+  plan.notes.forEach((note) => {
+    notes.appendChild(createTextElement("li", note));
+  });
+  card.appendChild(notes);
+
+  proposalLead.textContent = plan.summary;
+  proposalArea.replaceChildren(card);
+  showScreen(proposalScreen);
+}
+
+/* AI APIに送る */
+async function sendToAI(condition) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 30_000);
+
+  try {
+    const response = await fetch("/api/generate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ conditions: condition }),
+      signal: controller.signal
+    });
+
+    let data = null;
+    try {
+      data = await response.json();
+    } catch {
+      throw new Error("サーバーから正しい応答を受信できませんでした。");
+    }
+
+    if (!response.ok) {
+      throw new Error(data?.error || "旅行プランを生成できませんでした。");
+    }
+
+    if (!data?.plan || !Array.isArray(data.plan.schedule) || !Array.isArray(data.plan.notes)) {
+      throw new Error("旅行プランの形式が正しくありません。");
+    }
+
+    return data.plan;
+  } catch (error) {
+    if (error.name === "AbortError") {
+      throw new Error("通信がタイムアウトしました。もう一度お試しください。");
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeoutId);
+  }
 }
 
 /* ホーム → 条件設定 */
@@ -388,17 +483,32 @@ startBtn.addEventListener("click", () => {
 });
 
 /* スケジュール作成 */
-makePlanBtn.addEventListener("click", () => {
+makePlanBtn.addEventListener("click", async () => {
+  if (isSubmitting) return;
+
   const condition = getUserCondition();
   const promptJson = createPromptJson(condition);
-  const jsonText = JSON.stringify(promptJson, null, 2);
+  const originalButtonText = makePlanBtn.textContent;
+  let errorMessage = "";
 
-  promptResult.innerHTML = `
-    <h3>生成されたJSON</h3>
-    <pre>${jsonText}</pre>
-  `;
+  isSubmitting = true;
+  makePlanBtn.textContent = "旅行プランを生成中…";
+  formMessage.textContent = "AIが旅行プランを考えています。しばらくお待ちください。";
+  showJsonSafely(promptJson);
+  validateForm();
 
-  sendToAI(promptJson);
+  try {
+    const plan = await sendToAI(condition);
+    showJsonSafely(plan);
+    renderPlan(plan);
+  } catch (error) {
+    errorMessage = error.message || "通信に失敗しました。時間をおいて再度お試しください。";
+  } finally {
+    isSubmitting = false;
+    makePlanBtn.textContent = originalButtonText;
+    validateForm();
+    if (errorMessage) formMessage.textContent = errorMessage;
+  }
 });
 
 /* 戻る */

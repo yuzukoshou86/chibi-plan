@@ -330,6 +330,63 @@ input[type="range"] {
   margin: 0 0 16px;
 }
 
+.generated-plan {
+  grid-column: 1 / -1;
+  min-height: 0;
+}
+
+.plan-summary {
+  line-height: 1.8;
+}
+
+.plan-totals {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 24px;
+  margin: 20px 0;
+  padding: 14px 16px;
+  border-radius: 18px;
+  background: #f7eec2;
+  font-weight: bold;
+}
+
+.generated-plan h4 {
+  margin: 28px 0 14px;
+  font-size: 20px;
+}
+
+.generated-schedule {
+  display: grid;
+  gap: 14px;
+}
+
+.schedule-item {
+  padding: 16px;
+  border: 2px solid #d6c49c;
+  border-radius: 20px;
+  background: #fffaf0;
+}
+
+.schedule-item h5 {
+  margin: 0 0 8px;
+  font-size: 18px;
+}
+
+.schedule-item p {
+  margin: 8px 0 0;
+  line-height: 1.7;
+}
+
+.schedule-meta {
+  color: #6b8f46;
+  font-weight: bold;
+}
+
+.generated-plan li {
+  margin-bottom: 8px;
+  line-height: 1.6;
+}
+
 @keyframes fadeIn {
   from {
     opacity: 0;
