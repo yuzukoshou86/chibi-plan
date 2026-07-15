@@ -136,6 +136,15 @@ function isTimeoutError(error) {
   );
 }
 
+function getConfiguredApiKey() {
+  if (typeof process.env.OPENAI_API_KEY !== "string") return null;
+
+  const apiKey = process.env.OPENAI_API_KEY.trim();
+  if (!apiKey || /[\r\n]/.test(apiKey)) return null;
+
+  return apiKey;
+}
+
 function extractOutputText(response) {
   if (typeof response?.output_text === "string" && response.output_text.trim()) {
     return response.output_text;
@@ -156,7 +165,7 @@ function extractOutputText(response) {
   return null;
 }
 
-async function createOpenAIResponse(conditions) {
+async function createOpenAIResponse(conditions, apiKey) {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), OPENAI_TIMEOUT_MS);
 
@@ -164,7 +173,7 @@ async function createOpenAIResponse(conditions) {
     const response = await fetch(OPENAI_RESPONSES_URL, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+        Authorization: `Bearer ${apiKey}`,
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
@@ -208,15 +217,16 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: "入力内容を確認してください。" });
   }
 
-  if (!process.env.OPENAI_API_KEY) {
-    console.error("OPENAI_API_KEY is not configured.");
+  const apiKey = getConfiguredApiKey();
+  if (!apiKey) {
+    console.error("OPENAI_API_KEY is not configured correctly.");
     return res.status(500).json({ error: "旅行プランを生成できませんでした。" });
   }
 
   let failureStage = "openai_request";
 
   try {
-    const response = await createOpenAIResponse(req.body.conditions);
+    const response = await createOpenAIResponse(req.body.conditions, apiKey);
 
     failureStage = "response_validation";
 
@@ -241,7 +251,8 @@ export default async function handler(req, res) {
     console.error("OpenAI request failed.", {
       stage: failureStage,
       name: error?.name,
-      status: error?.status
+      status: error?.status,
+      code: error?.cause?.code || error?.code
     });
     return res.status(500).json({ error: "旅行プランを生成できませんでした。時間をおいて再度お試しください。" });
   }
