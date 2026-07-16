@@ -36,6 +36,7 @@
           <label class="check-item"><input type="checkbox" name="dayMood" value="学び・体験を楽しみたい"> 🎨 学び・体験を楽しみたい</label>
           <label class="check-item"><input type="checkbox" name="dayMood" value="思い出を作りたい"> 💛 思い出を作りたい</label>
           <label class="check-item"><input type="checkbox" name="dayMood" value="アクティブに過ごしたい"> 💪 アクティブに過ごしたい</label>
+          <label class="check-item"><input type="checkbox" name="dayMood" value="おまかせ" id="dayRandom"> 🎲 おまかせ</label>
         </div>
       </div>
 
@@ -53,15 +54,25 @@
 
       <div class="card">
         <label for="startPlace">出発地</label>
-        <input id="startPlace" type="text" placeholder="例：大阪駅" />
+        <div class="station-field">
+          <input
+            id="startPlace"
+            type="text"
+            placeholder="駅名を入力（例：大阪）"
+            maxlength="40"
+            autocomplete="off"
+            aria-autocomplete="list"
+            aria-controls="stationSuggestions"
+            aria-expanded="false"
+          />
+          <div id="stationSuggestions" class="station-suggestions hidden" role="listbox"></div>
+        </div>
+        <p id="stationStatus" class="station-status" aria-live="polite">駅名を入力し、候補から選択してください。</p>
       </div>
 
-      <div class="card">
-        <label for="peopleRange">人数</label>
-        <div class="range-row">
-          <input id="peopleRange" type="range" min="1" max="10" value="1" />
-          <span id="peopleText">1人</span>
-        </div>
+      <div class="card compact-choice-card">
+        <p class="card-title">人数</p>
+        <select id="peopleRange" class="compact-select" aria-label="人数"></select>
       </div>
 
       <div class="card schedule-card">
@@ -101,18 +112,18 @@
 
   <div id="startTimeBox" class="time-box hidden">
     <p class="card-title small-title">出発時間</p>
-    <div class="wheel-picker" data-target="startTime">
-      <div class="wheel-column" id="startHourWheel"></div>
-      <div class="wheel-column" id="startMinuteWheel"></div>
+    <div class="compact-time-picker">
+      <label><span>時</span><select id="startHourWheel" aria-label="出発時"></select></label>
+      <label><span>分</span><select id="startMinuteWheel" aria-label="出発分"></select></label>
     </div>
     <input type="hidden" id="startTime" value="" />
   </div>
 
   <div class="time-box">
     <p class="card-title small-title">終了時間</p>
-    <div class="wheel-picker" data-target="endTime">
-      <div class="wheel-column" id="endHourWheel"></div>
-      <div class="wheel-column" id="endMinuteWheel"></div>
+    <div class="compact-time-picker">
+      <label><span>時</span><select id="endHourWheel" aria-label="終了時"></select></label>
+      <label><span>分</span><select id="endMinuteWheel" aria-label="終了分"></select></label>
     </div>
     <input type="hidden" id="endTime" value="" />
   </div>
@@ -120,12 +131,9 @@
   <p class="helper-text">出発地点を出てから、出発地点へ戻るまでの時間です。</p>
 </div>
 
-      <div class="card">
-        <label for="budgetRange">予算</label>
-        <div class="range-row">
-          <input id="budgetRange" type="range" min="1000" max="50000" step="1000" value="10000" />
-          <span id="budgetText">10,000円</span>
-        </div>
+      <div class="card compact-choice-card">
+        <p class="card-title">予算</p>
+        <select id="budgetRange" class="compact-select" aria-label="予算"></select>
       </div>
 
       <p id="formMessage" class="form-message">すべての項目を入力してください。</p>
@@ -133,10 +141,6 @@
       <button id="makePlanBtn" class="main-btn" disabled>
         スケジュール作成
       </button>
-
-      <div id="promptResult" class="prompt-result">
-        <p class="prompt-placeholder">ここに生成されたJSONが表示されます。</p>
-      </div>
     </section>
 
     <section id="proposalScreen" class="screen">
@@ -168,6 +172,11 @@
         </div>
       </div>
     </section>
+
+    <footer class="site-credit">
+      <a href="https://github.com/Seo-4d696b75/station_database" target="_blank" rel="noopener noreferrer">駅データ出典</a>
+      <span>（CC BY 4.0）</span>
+    </footer>
 
   </main>
 

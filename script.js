@@ -7,10 +7,7 @@ const makePlanBtn = document.getElementById("makePlanBtn");
 const backBtn = document.getElementById("backBtn");
 
 const peopleRange = document.getElementById("peopleRange");
-const peopleText = document.getElementById("peopleText");
-
 const budgetRange = document.getElementById("budgetRange");
-const budgetText = document.getElementById("budgetText");
 
 const tripButtons = document.querySelectorAll(".trip-type");
 const stayOptions = document.getElementById("stayOptions");
@@ -28,9 +25,18 @@ const endMinuteWheel = document.getElementById("endMinuteWheel");
 
 const startPlaceInput = document.getElementById("startPlace");
 const formMessage = document.getElementById("formMessage");
-const promptResult = document.getElementById("promptResult");
+const stationSuggestions = document.getElementById("stationSuggestions");
+const stationStatus = document.getElementById("stationStatus");
+const proposalLead = document.getElementById("proposalLead");
+const proposalArea = document.querySelector(".proposal-area");
 
+const dayRandom = document.getElementById("dayRandom");
 const senseRandom = document.getElementById("senseRandom");
+let isSubmitting = false;
+let isStationValid = false;
+let isStationSearchPending = false;
+let stationSearchTimer = null;
+let stationSearchController = null;
 
 /* 固定プロンプト */
 const FIXED_PROMPT = `
@@ -161,99 +167,59 @@ function showScreen(screen) {
   screen.classList.add("active");
 }
 
-/* ホイールの中身を作る */
-function createWheelItems(container, values) {
-  container.innerHTML = "";
-
-  values.forEach((value) => {
-    const item = document.createElement("div");
-    item.className = "wheel-item";
-    item.textContent = value;
-    item.dataset.value = value;
-    container.appendChild(item);
+function createSelectOptions(select, values) {
+  select.replaceChildren();
+  values.forEach((entry) => {
+    const option = document.createElement("option");
+    option.value = typeof entry === "object" ? entry.value : entry;
+    option.textContent = typeof entry === "object" ? entry.label : entry;
+    select.appendChild(option);
   });
-}
-
-/* ホイール中央にある項目を取得 */
-function getCenterItem(container) {
-  const items = Array.from(container.querySelectorAll(".wheel-item"));
-  const containerCenter = container.getBoundingClientRect().top + container.clientHeight / 2;
-
-  let closestItem = items[0];
-  let closestDistance = Infinity;
-
-  items.forEach((item) => {
-    const itemCenter = item.getBoundingClientRect().top + item.clientHeight / 2;
-    const distance = Math.abs(containerCenter - itemCenter);
-
-    if (distance < closestDistance) {
-      closestDistance = distance;
-      closestItem = item;
-    }
-  });
-
-  return closestItem;
-}
-
-/* 選択中の見た目を更新 */
-function updateWheelSelected(container) {
-  const items = container.querySelectorAll(".wheel-item");
-  const selectedItem = getCenterItem(container);
-
-  items.forEach((item) => item.classList.remove("selected"));
-  selectedItem.classList.add("selected");
-
-  updateHiddenTimes();
-  validateForm();
 }
 
 /* hidden input に時間を入れる */
 function updateHiddenTimes() {
-  const startHour = getCenterItem(startHourWheel).dataset.value;
-  const startMinute = getCenterItem(startMinuteWheel).dataset.value;
-  const endHour = getCenterItem(endHourWheel).dataset.value;
-  const endMinute = getCenterItem(endMinuteWheel).dataset.value;
-
-  startTimeSelect.value = `${startHour}:${startMinute}`;
-  endTimeSelect.value = `${endHour}:${endMinute}`;
+  startTimeSelect.value = `${startHourWheel.value}:${startMinuteWheel.value}`;
+  endTimeSelect.value = `${endHourWheel.value}:${endMinuteWheel.value}`;
+  validateForm();
 }
 
-/* 指定した時間へスクロール */
-function scrollToValue(container, value) {
-  const item = container.querySelector(`[data-value="${value}"]`);
-  if (!item) return;
-
-  container.scrollTop = item.offsetTop - container.clientHeight / 2 + item.clientHeight / 2;
-  updateWheelSelected(container);
-}
-
-/* 時間ホイール作成 */
 function createTimeOptions() {
   const hours = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, "0"));
   const minutes = ["00", "15", "30", "45"];
 
-  createWheelItems(startHourWheel, hours);
-  createWheelItems(startMinuteWheel, minutes);
-  createWheelItems(endHourWheel, hours);
-  createWheelItems(endMinuteWheel, minutes);
+  createSelectOptions(startHourWheel, hours);
+  createSelectOptions(startMinuteWheel, minutes);
+  createSelectOptions(endHourWheel, hours);
+  createSelectOptions(endMinuteWheel, minutes);
 
-  [startHourWheel, startMinuteWheel, endHourWheel, endMinuteWheel].forEach((wheel) => {
-    wheel.addEventListener("scroll", () => {
-      clearTimeout(wheel.scrollTimer);
-      wheel.scrollTimer = setTimeout(() => {
-        updateWheelSelected(wheel);
-      }, 80);
-    });
+  [startHourWheel, startMinuteWheel, endHourWheel, endMinuteWheel].forEach((select) => {
+    select.addEventListener("change", updateHiddenTimes);
   });
 
-  setTimeout(() => {
-    scrollToValue(startHourWheel, "09");
-    scrollToValue(startMinuteWheel, "00");
-    scrollToValue(endHourWheel, "17");
-    scrollToValue(endMinuteWheel, "00");
-    updateHiddenTimes();
-    validateForm();
-  }, 0);
+  startHourWheel.value = "09";
+  startMinuteWheel.value = "00";
+  endHourWheel.value = "17";
+  endMinuteWheel.value = "00";
+  updateHiddenTimes();
+}
+
+function createChoiceOptions() {
+  const people = Array.from({ length: 10 }, (_, index) => ({
+    value: String(index + 1),
+    label: `${index + 1}人`
+  }));
+  const budgets = Array.from({ length: 50 }, (_, index) => {
+    const value = (index + 1) * 1000;
+    return { value: String(value), label: `${value.toLocaleString()}円` };
+  });
+
+  createSelectOptions(peopleRange, people);
+  createSelectOptions(budgetRange, budgets);
+  peopleRange.value = "1";
+  budgetRange.value = "10000";
+  peopleRange.addEventListener("change", validateForm);
+  budgetRange.addEventListener("change", validateForm);
 }
 
 /* 今から出発の場合の現在時刻 15分丸め */
@@ -299,8 +265,8 @@ function getUserCondition() {
     dayTheme: getCheckedValues("dayMood"),
     senses: getCheckedValues("senseMood"),
     departure: startPlaceInput.value.trim(),
-    people: peopleText.textContent,
-    budget: budgetText.textContent,
+    people: `${peopleRange.value}人`,
+    budget: `${Number(budgetRange.value).toLocaleString()}円`,
     tripType: tripType,
     startType: startType,
     startTime: startTypeValue === "now" ? getCurrentRoundedTime() : startTimeSelect.value,
@@ -350,9 +316,80 @@ ${FIXED_PROMPT}
 function createPromptJson(condition) {
   return {
     serviceName: "ちびプラン",
-    conditions: condition,
-    prompt: createPromptText(condition)
+    conditions: condition
   };
+}
+
+function hideStationSuggestions() {
+  stationSuggestions.classList.add("hidden");
+  stationSuggestions.replaceChildren();
+  startPlaceInput.setAttribute("aria-expanded", "false");
+}
+
+function selectStation(station) {
+  const stationName = station.name.endsWith("駅") ? station.name : `${station.name}駅`;
+  startPlaceInput.value = stationName;
+  isStationValid = true;
+  isStationSearchPending = false;
+  stationStatus.textContent = `選択中：${stationName}`;
+  stationStatus.classList.add("valid");
+  hideStationSuggestions();
+  validateForm();
+}
+
+function renderStationSuggestions(stations) {
+  stationSuggestions.replaceChildren();
+
+  stations.forEach((station) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "station-suggestion";
+    button.setAttribute("role", "option");
+
+    const name = createTextElement("span", station.name, "station-suggestion-name");
+    const kana = createTextElement("span", station.nameKana, "station-suggestion-kana");
+    button.append(name, kana);
+    button.addEventListener("click", () => selectStation(station));
+    stationSuggestions.appendChild(button);
+  });
+
+  const hasSuggestions = stations.length > 0;
+  stationSuggestions.classList.toggle("hidden", !hasSuggestions);
+  startPlaceInput.setAttribute("aria-expanded", String(hasSuggestions));
+}
+
+async function searchStationSuggestions(query) {
+  stationSearchController?.abort();
+  stationSearchController = new AbortController();
+  isStationSearchPending = true;
+  stationStatus.textContent = "駅名を検索しています…";
+  stationStatus.classList.remove("valid");
+  validateForm();
+
+  try {
+    const response = await fetch(`/api/stations?q=${encodeURIComponent(query)}`, {
+      signal: stationSearchController.signal
+    });
+    const data = await response.json();
+
+    if (startPlaceInput.value.trim() !== query) return;
+    if (!response.ok) throw new Error(data?.error || "駅情報を取得できませんでした。");
+
+    const stations = Array.isArray(data?.stations) ? data.stations : [];
+    renderStationSuggestions(stations);
+    stationStatus.textContent = stations.length
+      ? "候補から出発駅を選択してください。"
+      : "該当する駅が見つかりません。正式な駅名を確認してください。";
+  } catch (error) {
+    if (error.name === "AbortError") return;
+    hideStationSuggestions();
+    stationStatus.textContent = "駅情報を取得できませんでした。時間をおいて再度お試しください。";
+  } finally {
+    if (startPlaceInput.value.trim() === query) {
+      isStationSearchPending = false;
+      validateForm();
+    }
+  }
 }
 
 /* 入力チェック */
@@ -363,22 +400,116 @@ function validateForm() {
   const isValid =
     getCheckedValues("dayMood").length > 0 &&
     getCheckedValues("senseMood").length > 0 &&
-    startPlaceInput.value.trim() !== "" &&
-    peopleText.textContent !== "" &&
-    budgetText.textContent !== "" &&
+    isStationValid &&
+    !isStationSearchPending &&
+    peopleRange.value !== "" &&
+    budgetRange.value !== "" &&
     getSelectedButtonText(".trip-type.selected") !== "" &&
     endTimeSelect.value !== "" &&
     (startTypeValue === "now" || startTimeSelect.value !== "");
 
-  makePlanBtn.disabled = !isValid;
-  formMessage.textContent = isValid
-    ? "入力できました。スケジュール作成できます。"
-    : "すべての項目を入力してください。";
+  makePlanBtn.disabled = isSubmitting || !isValid;
+  if (isSubmitting) return;
+
+  if (startPlaceInput.value.trim() && !isStationValid) {
+    formMessage.textContent = "出発地は検索候補から実在する駅を選択してください。";
+  } else {
+    formMessage.textContent = isValid
+      ? "入力できました。スケジュール作成できます。"
+      : "すべての項目を入力してください。";
+  }
 }
 
-/* 後でAI APIに送る用 */
-function sendToAI(promptJson) {
-  console.log("AIへ送信予定のJSON:", promptJson);
+function createTextElement(tagName, text, className = "") {
+  const element = document.createElement(tagName);
+  element.textContent = text;
+  if (className) element.className = className;
+  return element;
+}
+
+function renderPlan(plan) {
+  const card = document.createElement("div");
+  card.className = "plan-card generated-plan";
+  card.appendChild(createTextElement("p", "AI旅行プラン", "area-label"));
+  card.appendChild(createTextElement("h3", plan.title));
+  card.appendChild(createTextElement("p", plan.summary, "plan-summary"));
+
+  const totals = document.createElement("div");
+  totals.className = "plan-totals";
+  totals.appendChild(createTextElement("span", `合計予算（目安）: ${Number(plan.totalBudget).toLocaleString()}円`));
+  totals.appendChild(createTextElement("span", `合計時間: ${plan.totalTime}`));
+  card.appendChild(totals);
+
+  card.appendChild(createTextElement("h4", "スケジュール"));
+  const schedule = document.createElement("div");
+  schedule.className = "generated-schedule";
+
+  plan.schedule.forEach((item) => {
+    const scheduleItem = document.createElement("article");
+    scheduleItem.className = "schedule-item";
+    scheduleItem.appendChild(createTextElement("h5", `${item.time}｜${item.spot}`));
+    scheduleItem.appendChild(createTextElement("p", item.description));
+    scheduleItem.appendChild(
+      createTextElement(
+        "p",
+        `費用（目安）: ${Number(item.estimatedCost).toLocaleString()}円 ／ 移動時間: ${item.travelTime}`,
+        "schedule-meta"
+      )
+    );
+    schedule.appendChild(scheduleItem);
+  });
+
+  card.appendChild(schedule);
+  card.appendChild(createTextElement("h4", "注意事項"));
+
+  const notes = document.createElement("ul");
+  plan.notes.forEach((note) => {
+    notes.appendChild(createTextElement("li", note));
+  });
+  card.appendChild(notes);
+
+  proposalLead.textContent = plan.summary;
+  proposalArea.replaceChildren(card);
+  showScreen(proposalScreen);
+}
+
+/* AI APIに送る */
+async function sendToAI(condition) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 85_000);
+
+  try {
+    const response = await fetch("/api/generate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ conditions: condition }),
+      signal: controller.signal
+    });
+
+    let data = null;
+    try {
+      data = await response.json();
+    } catch {
+      throw new Error("サーバーから正しい応答を受信できませんでした。");
+    }
+
+    if (!response.ok) {
+      throw new Error(data?.error || "旅行プランを生成できませんでした。");
+    }
+
+    if (!data?.plan || !Array.isArray(data.plan.schedule) || !Array.isArray(data.plan.notes)) {
+      throw new Error("旅行プランの形式が正しくありません。");
+    }
+
+    return data.plan;
+  } catch (error) {
+    if (error.name === "AbortError") {
+      throw new Error("通信がタイムアウトしました。もう一度お試しください。");
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeoutId);
+  }
 }
 
 /* ホーム → 条件設定 */
@@ -388,35 +519,34 @@ startBtn.addEventListener("click", () => {
 });
 
 /* スケジュール作成 */
-makePlanBtn.addEventListener("click", () => {
+makePlanBtn.addEventListener("click", async () => {
+  if (isSubmitting) return;
+
   const condition = getUserCondition();
-  const promptJson = createPromptJson(condition);
-  const jsonText = JSON.stringify(promptJson, null, 2);
+  const originalButtonText = makePlanBtn.textContent;
+  let errorMessage = "";
 
-  promptResult.innerHTML = `
-    <h3>生成されたJSON</h3>
-    <pre>${jsonText}</pre>
-  `;
+  isSubmitting = true;
+  makePlanBtn.textContent = "旅行プランを生成中…";
+  formMessage.textContent = "AIが旅行プランを考えています。しばらくお待ちください。";
+  validateForm();
 
-  sendToAI(promptJson);
+  try {
+    const plan = await sendToAI(condition);
+    renderPlan(plan);
+  } catch (error) {
+    errorMessage = error.message || "通信に失敗しました。時間をおいて再度お試しください。";
+  } finally {
+    isSubmitting = false;
+    makePlanBtn.textContent = originalButtonText;
+    validateForm();
+    if (errorMessage) formMessage.textContent = errorMessage;
+  }
 });
 
 /* 戻る */
 backBtn.addEventListener("click", () => {
   showScreen(conditionScreen);
-});
-
-/* 人数 */
-peopleRange.addEventListener("input", () => {
-  peopleText.textContent = `${peopleRange.value}人`;
-  validateForm();
-});
-
-/* 予算 */
-budgetRange.addEventListener("input", () => {
-  const budget = Number(budgetRange.value).toLocaleString();
-  budgetText.textContent = `${budget}円`;
-  validateForm();
 });
 
 /* 日帰り・お泊まり */
@@ -460,32 +590,54 @@ startTypeButtons.forEach((button) => {
   });
 });
 
-/* おまかせ選択時は他の五感を解除 */
-document.querySelectorAll('input[name="senseMood"]').forEach((checkbox) => {
+function setupRandomChoice(name, randomCheckbox) {
+  document.querySelectorAll(`input[name="${name}"]`).forEach((checkbox) => {
   checkbox.addEventListener("change", () => {
-    const senseCheckboxes = Array.from(document.querySelectorAll('input[name="senseMood"]'));
+      const checkboxes = Array.from(document.querySelectorAll(`input[name="${name}"]`));
 
-    if (checkbox.value === "おまかせ" && checkbox.checked) {
-      senseCheckboxes.forEach((item) => {
-        if (item.value !== "おまかせ") item.checked = false;
-      });
-    }
+      if (checkbox.value === "おまかせ" && checkbox.checked) {
+        checkboxes.forEach((item) => {
+          if (item.value !== "おまかせ") item.checked = false;
+        });
+      }
 
-    if (checkbox.value !== "おまかせ" && checkbox.checked) {
-      senseRandom.checked = false;
-    }
+      if (checkbox.value !== "おまかせ" && checkbox.checked) {
+        randomCheckbox.checked = false;
+      }
 
-    validateForm();
+      validateForm();
+    });
   });
+}
+
+setupRandomChoice("senseMood", senseRandom);
+setupRandomChoice("dayMood", dayRandom);
+
+startPlaceInput.addEventListener("input", () => {
+  isStationValid = false;
+  isStationSearchPending = false;
+  stationStatus.classList.remove("valid");
+  hideStationSuggestions();
+  clearTimeout(stationSearchTimer);
+  stationSearchController?.abort();
+
+  const query = startPlaceInput.value.trim();
+  if (!query) {
+    stationStatus.textContent = "駅名を入力し、候補から選択してください。";
+    validateForm();
+    return;
+  }
+
+  stationStatus.textContent = "入力を続けると駅の候補を表示します。";
+  stationSearchTimer = setTimeout(() => searchStationSuggestions(query), 300);
+  validateForm();
 });
 
-/* 一日のテーマ */
-document.querySelectorAll('input[name="dayMood"]').forEach((checkbox) => {
-  checkbox.addEventListener("change", validateForm);
+document.addEventListener("click", (event) => {
+  if (!event.target.closest(".station-field")) hideStationSuggestions();
 });
-
-startPlaceInput.addEventListener("input", validateForm);
 
 /* 初期処理 */
 createTimeOptions();
+createChoiceOptions();
 validateForm();
