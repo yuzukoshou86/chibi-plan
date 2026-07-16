@@ -1,6 +1,8 @@
+import { isKnownStationName } from "./_station-service.js";
+
 const MODEL = "gpt-5.6-terra";
 const MAX_OUTPUT_TOKENS = 2000;
-const OPENAI_TIMEOUT_MS = 25_000;
+const OPENAI_TIMEOUT_MS = 70_000;
 const MAX_BODY_LENGTH = 4_000;
 const OPENAI_RESPONSES_URL = "https://api.openai.com/v1/responses";
 
@@ -215,6 +217,19 @@ export default async function handler(req, res) {
 
   if (!validateRequestBody(req.body)) {
     return res.status(400).json({ error: "入力内容を確認してください。" });
+  }
+
+  try {
+    if (!(await isKnownStationName(req.body.conditions.departure))) {
+      return res.status(400).json({ error: "候補から実在する駅を選択してください。" });
+    }
+  } catch (error) {
+    console.error("Station validation failed.", {
+      name: error?.name,
+      status: error?.status,
+      code: error?.cause?.code || error?.code
+    });
+    return res.status(503).json({ error: "駅情報を確認できませんでした。時間をおいて再度お試しください。" });
   }
 
   const apiKey = getConfiguredApiKey();

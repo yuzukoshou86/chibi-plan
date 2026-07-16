@@ -22,6 +22,7 @@ body {
   width: min(1100px, 100%);
   margin: 0 auto;
   padding: 24px;
+  padding-bottom: max(96px, calc(48px + env(safe-area-inset-bottom)));
 }
 
 .screen {
@@ -167,21 +168,66 @@ select {
   accent-color: #7bb661;
 }
 
-.range-row {
-  display: flex;
-  align-items: center;
-  gap: 18px;
+
+.station-field {
+  position: relative;
 }
 
-.range-row span {
-  min-width: 80px;
-  text-align: right;
+.station-suggestions {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 8px);
+  left: 0;
+  right: 0;
+  max-height: 280px;
+  overflow-y: auto;
+  padding: 8px;
+  background: #fffef8;
+  border: 2px solid #d6c49c;
+  border-radius: 18px;
+  box-shadow: 0 12px 24px rgba(79, 68, 43, 0.2);
+}
+
+.station-suggestion {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  padding: 12px 14px;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: #4a3b2a;
+  text-align: left;
+  cursor: pointer;
+}
+
+.station-suggestion:hover,
+.station-suggestion:focus-visible {
+  background: #f7eec2;
+  outline: 2px solid #7bb661;
+}
+
+.station-suggestion-name {
   font-weight: bold;
 }
 
-input[type="range"] {
-  width: 100%;
-  accent-color: #7bb661;
+.station-suggestion-kana {
+  color: #8a7b64;
+  font-size: 13px;
+}
+
+.station-status {
+  margin: 10px 0 0;
+  color: #8a7b64;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.station-status.valid {
+  color: #4f8f3d;
+  font-weight: bold;
 }
 
 .select-row {
@@ -254,34 +300,6 @@ input[type="range"] {
 .form-message {
   font-weight: bold;
   margin: 0 0 12px;
-}
-
-.prompt-result {
-  margin-top: 24px;
-  background: #fffef8;
-  border: 3px dashed #d6c49c;
-  border-radius: 24px;
-  padding: 20px;
-  line-height: 1.8;
-  box-shadow: 0 8px 16px rgba(79, 68, 43, 0.12);
-  max-width: 100%;
-}
-
-.prompt-result h3 {
-  margin-top: 0;
-}
-
-.prompt-result pre {
-  white-space: pre-wrap;
-  word-break: break-word;
-  overflow-wrap: anywhere;
-  margin: 0;
-  font-size: 14px;
-}
-
-.prompt-placeholder {
-  color: #8a7b64;
-  margin: 0;
 }
 
 .proposal-header {
@@ -410,6 +428,7 @@ input[type="range"] {
 @media (max-width: 800px) {
   .app {
     padding: 16px;
+    padding-bottom: max(112px, calc(64px + env(safe-area-inset-bottom)));
   }
 
   .hero {
@@ -440,16 +459,6 @@ input[type="range"] {
     grid-template-columns: 1fr;
   }
 
-  .range-row {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 10px;
-  }
-
-  .range-row span {
-    text-align: left;
-  }
-
   .proposal-area {
     grid-template-columns: 1fr;
   }
@@ -462,6 +471,7 @@ input[type="range"] {
 @media (max-width: 420px) {
   .app {
     padding: 12px;
+    padding-bottom: max(120px, calc(72px + env(safe-area-inset-bottom)));
   }
 
   .card {
@@ -482,6 +492,62 @@ input[type="range"] {
 .small-title {
   font-size: 16px;
   margin-top: 0;
+}
+
+.compact-select {
+  display: block;
+  width: 100%;
+  padding: 16px 48px 16px 16px;
+  border-radius: 18px;
+  cursor: pointer;
+}
+
+.compact-time-picker {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  width: 100%;
+}
+
+.compact-time-picker label {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 6px;
+  margin: 0;
+  color: #6b8f46;
+  font-size: 13px;
+  text-align: center;
+}
+
+.compact-time-picker select {
+  width: 100%;
+  padding: 16px;
+  border-radius: 18px;
+  cursor: pointer;
+}
+
+.time-box + .time-box {
+  margin-top: 22px;
+}
+
+.time-box + .helper-text {
+  margin-top: 18px;
+}
+
+.time-box .small-title,
+.compact-choice-card > .card-title {
+  text-align: center;
+}
+
+.site-credit {
+  padding: 12px 0;
+  color: #8a7b64;
+  font-size: 11px;
+  text-align: center;
+}
+
+.site-credit a {
+  color: inherit;
 }
 
 .wheel-picker {
@@ -535,4 +601,31 @@ input[type="range"] {
 
 .wheel-item.selected {
   color: #4a3b2a;
+}
+
+.single-wheel-picker {
+  grid-template-columns: 1fr;
+  height: 150px;
+}
+
+.single-wheel-picker .wheel-column {
+  height: 126px;
+  padding: 41px 0;
+}
+
+.wheel-value-label {
+  display: block;
+  margin-top: 10px;
+  color: #4f8f3d;
+  font-size: 16px;
+  font-weight: bold;
+  text-align: center;
+}
+
+@media (max-width: 420px) {
+  .station-suggestion {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 2px;
+  }
 }

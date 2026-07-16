@@ -7,10 +7,7 @@ const makePlanBtn = document.getElementById("makePlanBtn");
 const backBtn = document.getElementById("backBtn");
 
 const peopleRange = document.getElementById("peopleRange");
-const peopleText = document.getElementById("peopleText");
-
 const budgetRange = document.getElementById("budgetRange");
-const budgetText = document.getElementById("budgetText");
 
 const tripButtons = document.querySelectorAll(".trip-type");
 const stayOptions = document.getElementById("stayOptions");
@@ -28,12 +25,18 @@ const endMinuteWheel = document.getElementById("endMinuteWheel");
 
 const startPlaceInput = document.getElementById("startPlace");
 const formMessage = document.getElementById("formMessage");
-const promptResult = document.getElementById("promptResult");
+const stationSuggestions = document.getElementById("stationSuggestions");
+const stationStatus = document.getElementById("stationStatus");
 const proposalLead = document.getElementById("proposalLead");
 const proposalArea = document.querySelector(".proposal-area");
 
+const dayRandom = document.getElementById("dayRandom");
 const senseRandom = document.getElementById("senseRandom");
 let isSubmitting = false;
+let isStationValid = false;
+let isStationSearchPending = false;
+let stationSearchTimer = null;
+let stationSearchController = null;
 
 /* 固定プロンプト */
 const FIXED_PROMPT = `
@@ -164,99 +167,59 @@ function showScreen(screen) {
   screen.classList.add("active");
 }
 
-/* ホイールの中身を作る */
-function createWheelItems(container, values) {
-  container.innerHTML = "";
-
-  values.forEach((value) => {
-    const item = document.createElement("div");
-    item.className = "wheel-item";
-    item.textContent = value;
-    item.dataset.value = value;
-    container.appendChild(item);
+function createSelectOptions(select, values) {
+  select.replaceChildren();
+  values.forEach((entry) => {
+    const option = document.createElement("option");
+    option.value = typeof entry === "object" ? entry.value : entry;
+    option.textContent = typeof entry === "object" ? entry.label : entry;
+    select.appendChild(option);
   });
-}
-
-/* ホイール中央にある項目を取得 */
-function getCenterItem(container) {
-  const items = Array.from(container.querySelectorAll(".wheel-item"));
-  const containerCenter = container.getBoundingClientRect().top + container.clientHeight / 2;
-
-  let closestItem = items[0];
-  let closestDistance = Infinity;
-
-  items.forEach((item) => {
-    const itemCenter = item.getBoundingClientRect().top + item.clientHeight / 2;
-    const distance = Math.abs(containerCenter - itemCenter);
-
-    if (distance < closestDistance) {
-      closestDistance = distance;
-      closestItem = item;
-    }
-  });
-
-  return closestItem;
-}
-
-/* 選択中の見た目を更新 */
-function updateWheelSelected(container) {
-  const items = container.querySelectorAll(".wheel-item");
-  const selectedItem = getCenterItem(container);
-
-  items.forEach((item) => item.classList.remove("selected"));
-  selectedItem.classList.add("selected");
-
-  updateHiddenTimes();
-  validateForm();
 }
 
 /* hidden input に時間を入れる */
 function updateHiddenTimes() {
-  const startHour = getCenterItem(startHourWheel).dataset.value;
-  const startMinute = getCenterItem(startMinuteWheel).dataset.value;
-  const endHour = getCenterItem(endHourWheel).dataset.value;
-  const endMinute = getCenterItem(endMinuteWheel).dataset.value;
-
-  startTimeSelect.value = `${startHour}:${startMinute}`;
-  endTimeSelect.value = `${endHour}:${endMinute}`;
+  startTimeSelect.value = `${startHourWheel.value}:${startMinuteWheel.value}`;
+  endTimeSelect.value = `${endHourWheel.value}:${endMinuteWheel.value}`;
+  validateForm();
 }
 
-/* 指定した時間へスクロール */
-function scrollToValue(container, value) {
-  const item = container.querySelector(`[data-value="${value}"]`);
-  if (!item) return;
-
-  container.scrollTop = item.offsetTop - container.clientHeight / 2 + item.clientHeight / 2;
-  updateWheelSelected(container);
-}
-
-/* 時間ホイール作成 */
 function createTimeOptions() {
   const hours = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, "0"));
   const minutes = ["00", "15", "30", "45"];
 
-  createWheelItems(startHourWheel, hours);
-  createWheelItems(startMinuteWheel, minutes);
-  createWheelItems(endHourWheel, hours);
-  createWheelItems(endMinuteWheel, minutes);
+  createSelectOptions(startHourWheel, hours);
+  createSelectOptions(startMinuteWheel, minutes);
+  createSelectOptions(endHourWheel, hours);
+  createSelectOptions(endMinuteWheel, minutes);
 
-  [startHourWheel, startMinuteWheel, endHourWheel, endMinuteWheel].forEach((wheel) => {
-    wheel.addEventListener("scroll", () => {
-      clearTimeout(wheel.scrollTimer);
-      wheel.scrollTimer = setTimeout(() => {
-        updateWheelSelected(wheel);
-      }, 80);
-    });
+  [startHourWheel, startMinuteWheel, endHourWheel, endMinuteWheel].forEach((select) => {
+    select.addEventListener("change", updateHiddenTimes);
   });
 
-  setTimeout(() => {
-    scrollToValue(startHourWheel, "09");
-    scrollToValue(startMinuteWheel, "00");
-    scrollToValue(endHourWheel, "17");
-    scrollToValue(endMinuteWheel, "00");
-    updateHiddenTimes();
-    validateForm();
-  }, 0);
+  startHourWheel.value = "09";
+  startMinuteWheel.value = "00";
+  endHourWheel.value = "17";
+  endMinuteWheel.value = "00";
+  updateHiddenTimes();
+}
+
+function createChoiceOptions() {
+  const people = Array.from({ length: 10 }, (_, index) => ({
+    value: String(index + 1),
+    label: `${index + 1}人`
+  }));
+  const budgets = Array.from({ length: 50 }, (_, index) => {
+    const value = (index + 1) * 1000;
+    return { value: String(value), label: `${value.toLocaleString()}円` };
+  });
+
+  createSelectOptions(peopleRange, people);
+  createSelectOptions(budgetRange, budgets);
+  peopleRange.value = "1";
+  budgetRange.value = "10000";
+  peopleRange.addEventListener("change", validateForm);
+  budgetRange.addEventListener("change", validateForm);
 }
 
 /* 今から出発の場合の現在時刻 15分丸め */
@@ -302,8 +265,8 @@ function getUserCondition() {
     dayTheme: getCheckedValues("dayMood"),
     senses: getCheckedValues("senseMood"),
     departure: startPlaceInput.value.trim(),
-    people: peopleText.textContent,
-    budget: budgetText.textContent,
+    people: `${peopleRange.value}人`,
+    budget: `${Number(budgetRange.value).toLocaleString()}円`,
     tripType: tripType,
     startType: startType,
     startTime: startTypeValue === "now" ? getCurrentRoundedTime() : startTimeSelect.value,
@@ -357,6 +320,78 @@ function createPromptJson(condition) {
   };
 }
 
+function hideStationSuggestions() {
+  stationSuggestions.classList.add("hidden");
+  stationSuggestions.replaceChildren();
+  startPlaceInput.setAttribute("aria-expanded", "false");
+}
+
+function selectStation(station) {
+  const stationName = station.name.endsWith("駅") ? station.name : `${station.name}駅`;
+  startPlaceInput.value = stationName;
+  isStationValid = true;
+  isStationSearchPending = false;
+  stationStatus.textContent = `選択中：${stationName}`;
+  stationStatus.classList.add("valid");
+  hideStationSuggestions();
+  validateForm();
+}
+
+function renderStationSuggestions(stations) {
+  stationSuggestions.replaceChildren();
+
+  stations.forEach((station) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "station-suggestion";
+    button.setAttribute("role", "option");
+
+    const name = createTextElement("span", station.name, "station-suggestion-name");
+    const kana = createTextElement("span", station.nameKana, "station-suggestion-kana");
+    button.append(name, kana);
+    button.addEventListener("click", () => selectStation(station));
+    stationSuggestions.appendChild(button);
+  });
+
+  const hasSuggestions = stations.length > 0;
+  stationSuggestions.classList.toggle("hidden", !hasSuggestions);
+  startPlaceInput.setAttribute("aria-expanded", String(hasSuggestions));
+}
+
+async function searchStationSuggestions(query) {
+  stationSearchController?.abort();
+  stationSearchController = new AbortController();
+  isStationSearchPending = true;
+  stationStatus.textContent = "駅名を検索しています…";
+  stationStatus.classList.remove("valid");
+  validateForm();
+
+  try {
+    const response = await fetch(`/api/stations?q=${encodeURIComponent(query)}`, {
+      signal: stationSearchController.signal
+    });
+    const data = await response.json();
+
+    if (startPlaceInput.value.trim() !== query) return;
+    if (!response.ok) throw new Error(data?.error || "駅情報を取得できませんでした。");
+
+    const stations = Array.isArray(data?.stations) ? data.stations : [];
+    renderStationSuggestions(stations);
+    stationStatus.textContent = stations.length
+      ? "候補から出発駅を選択してください。"
+      : "該当する駅が見つかりません。正式な駅名を確認してください。";
+  } catch (error) {
+    if (error.name === "AbortError") return;
+    hideStationSuggestions();
+    stationStatus.textContent = "駅情報を取得できませんでした。時間をおいて再度お試しください。";
+  } finally {
+    if (startPlaceInput.value.trim() === query) {
+      isStationSearchPending = false;
+      validateForm();
+    }
+  }
+}
+
 /* 入力チェック */
 function validateForm() {
   const selectedStartType = document.querySelector(".start-type.selected");
@@ -365,17 +400,24 @@ function validateForm() {
   const isValid =
     getCheckedValues("dayMood").length > 0 &&
     getCheckedValues("senseMood").length > 0 &&
-    startPlaceInput.value.trim() !== "" &&
-    peopleText.textContent !== "" &&
-    budgetText.textContent !== "" &&
+    isStationValid &&
+    !isStationSearchPending &&
+    peopleRange.value !== "" &&
+    budgetRange.value !== "" &&
     getSelectedButtonText(".trip-type.selected") !== "" &&
     endTimeSelect.value !== "" &&
     (startTypeValue === "now" || startTimeSelect.value !== "");
 
   makePlanBtn.disabled = isSubmitting || !isValid;
-  formMessage.textContent = isValid
-    ? "入力できました。スケジュール作成できます。"
-    : "すべての項目を入力してください。";
+  if (isSubmitting) return;
+
+  if (startPlaceInput.value.trim() && !isStationValid) {
+    formMessage.textContent = "出発地は検索候補から実在する駅を選択してください。";
+  } else {
+    formMessage.textContent = isValid
+      ? "入力できました。スケジュール作成できます。"
+      : "すべての項目を入力してください。";
+  }
 }
 
 function createTextElement(tagName, text, className = "") {
@@ -383,12 +425,6 @@ function createTextElement(tagName, text, className = "") {
   element.textContent = text;
   if (className) element.className = className;
   return element;
-}
-
-function showJsonSafely(value) {
-  const heading = createTextElement("h3", "生成されたJSON");
-  const pre = createTextElement("pre", JSON.stringify(value, null, 2));
-  promptResult.replaceChildren(heading, pre);
 }
 
 function renderPlan(plan) {
@@ -440,7 +476,7 @@ function renderPlan(plan) {
 /* AI APIに送る */
 async function sendToAI(condition) {
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 30_000);
+  const timeoutId = setTimeout(() => controller.abort(), 85_000);
 
   try {
     const response = await fetch("/api/generate", {
@@ -487,19 +523,16 @@ makePlanBtn.addEventListener("click", async () => {
   if (isSubmitting) return;
 
   const condition = getUserCondition();
-  const promptJson = createPromptJson(condition);
   const originalButtonText = makePlanBtn.textContent;
   let errorMessage = "";
 
   isSubmitting = true;
   makePlanBtn.textContent = "旅行プランを生成中…";
   formMessage.textContent = "AIが旅行プランを考えています。しばらくお待ちください。";
-  showJsonSafely(promptJson);
   validateForm();
 
   try {
     const plan = await sendToAI(condition);
-    showJsonSafely(plan);
     renderPlan(plan);
   } catch (error) {
     errorMessage = error.message || "通信に失敗しました。時間をおいて再度お試しください。";
@@ -514,19 +547,6 @@ makePlanBtn.addEventListener("click", async () => {
 /* 戻る */
 backBtn.addEventListener("click", () => {
   showScreen(conditionScreen);
-});
-
-/* 人数 */
-peopleRange.addEventListener("input", () => {
-  peopleText.textContent = `${peopleRange.value}人`;
-  validateForm();
-});
-
-/* 予算 */
-budgetRange.addEventListener("input", () => {
-  const budget = Number(budgetRange.value).toLocaleString();
-  budgetText.textContent = `${budget}円`;
-  validateForm();
 });
 
 /* 日帰り・お泊まり */
@@ -570,32 +590,54 @@ startTypeButtons.forEach((button) => {
   });
 });
 
-/* おまかせ選択時は他の五感を解除 */
-document.querySelectorAll('input[name="senseMood"]').forEach((checkbox) => {
+function setupRandomChoice(name, randomCheckbox) {
+  document.querySelectorAll(`input[name="${name}"]`).forEach((checkbox) => {
   checkbox.addEventListener("change", () => {
-    const senseCheckboxes = Array.from(document.querySelectorAll('input[name="senseMood"]'));
+      const checkboxes = Array.from(document.querySelectorAll(`input[name="${name}"]`));
 
-    if (checkbox.value === "おまかせ" && checkbox.checked) {
-      senseCheckboxes.forEach((item) => {
-        if (item.value !== "おまかせ") item.checked = false;
-      });
-    }
+      if (checkbox.value === "おまかせ" && checkbox.checked) {
+        checkboxes.forEach((item) => {
+          if (item.value !== "おまかせ") item.checked = false;
+        });
+      }
 
-    if (checkbox.value !== "おまかせ" && checkbox.checked) {
-      senseRandom.checked = false;
-    }
+      if (checkbox.value !== "おまかせ" && checkbox.checked) {
+        randomCheckbox.checked = false;
+      }
 
-    validateForm();
+      validateForm();
+    });
   });
+}
+
+setupRandomChoice("senseMood", senseRandom);
+setupRandomChoice("dayMood", dayRandom);
+
+startPlaceInput.addEventListener("input", () => {
+  isStationValid = false;
+  isStationSearchPending = false;
+  stationStatus.classList.remove("valid");
+  hideStationSuggestions();
+  clearTimeout(stationSearchTimer);
+  stationSearchController?.abort();
+
+  const query = startPlaceInput.value.trim();
+  if (!query) {
+    stationStatus.textContent = "駅名を入力し、候補から選択してください。";
+    validateForm();
+    return;
+  }
+
+  stationStatus.textContent = "入力を続けると駅の候補を表示します。";
+  stationSearchTimer = setTimeout(() => searchStationSuggestions(query), 300);
+  validateForm();
 });
 
-/* 一日のテーマ */
-document.querySelectorAll('input[name="dayMood"]').forEach((checkbox) => {
-  checkbox.addEventListener("change", validateForm);
+document.addEventListener("click", (event) => {
+  if (!event.target.closest(".station-field")) hideStationSuggestions();
 });
-
-startPlaceInput.addEventListener("input", validateForm);
 
 /* 初期処理 */
 createTimeOptions();
+createChoiceOptions();
 validateForm();
