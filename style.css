@@ -284,6 +284,43 @@ input[type="range"] {
   margin: 0;
 }
 
+.loading-state {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.loading-state h3,
+.loading-state p,
+.error-state h3,
+.error-state p {
+  margin: 0;
+}
+
+.loading-state p,
+.error-state p {
+  margin-top: 6px;
+}
+
+.loading-leaf {
+  display: inline-block;
+  font-size: 36px;
+  animation: sway 1.2s infinite ease-in-out;
+}
+
+.ai-plan {
+  font-family: inherit;
+  font-size: 16px;
+  line-height: 1.9;
+}
+
+.error-state {
+  color: #8c3f32;
+  background: #fff1ea;
+  border-radius: 18px;
+  padding: 16px;
+}
+
 .proposal-header {
   display: flex;
   gap: 18px;
