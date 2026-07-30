@@ -36,6 +36,7 @@
           <label class="check-item"><input type="checkbox" name="dayMood" value="学び・体験を楽しみたい"> 🎨 学び・体験を楽しみたい</label>
           <label class="check-item"><input type="checkbox" name="dayMood" value="思い出を作りたい"> 💛 思い出を作りたい</label>
           <label class="check-item"><input type="checkbox" name="dayMood" value="アクティブに過ごしたい"> 💪 アクティブに過ごしたい</label>
+          <label class="check-item"><input type="checkbox" name="dayMood" value="おまかせ" id="dayRandom"> 🎲 おまかせ</label>
         </div>
       </div>
 
@@ -53,15 +54,24 @@
 
       <div class="card">
         <label for="startPlace">出発地</label>
-        <input id="startPlace" type="text" placeholder="例：大阪駅" />
+        <input id="startPlace" type="text" placeholder="例：大阪駅" autocomplete="off" />
+        <p id="stationStatus" class="field-status">正式な駅名を「駅」まで入力してください。</p>
       </div>
 
       <div class="card">
-        <label for="peopleRange">人数</label>
-        <div class="range-row">
-          <input id="peopleRange" type="range" min="1" max="10" value="1" />
-          <span id="peopleText">1人</span>
-        </div>
+        <label for="peopleSelect">人数</label>
+        <select id="peopleSelect" class="scroll-select">
+          <option value="1">1人</option>
+          <option value="2">2人</option>
+          <option value="3">3人</option>
+          <option value="4">4人</option>
+          <option value="5">5人</option>
+          <option value="6">6人</option>
+          <option value="7">7人</option>
+          <option value="8">8人</option>
+          <option value="9">9人</option>
+          <option value="10">10人</option>
+        </select>
       </div>
 
       <div class="card schedule-card">
@@ -100,32 +110,21 @@
   </div>
 
   <div id="startTimeBox" class="time-box hidden">
-    <p class="card-title small-title">出発時間</p>
-    <div class="wheel-picker" data-target="startTime">
-      <div class="wheel-column" id="startHourWheel"></div>
-      <div class="wheel-column" id="startMinuteWheel"></div>
-    </div>
-    <input type="hidden" id="startTime" value="" />
+    <label class="small-title" for="startTime">出発時間</label>
+    <input type="time" id="startTime" value="09:00" step="900" />
   </div>
 
   <div class="time-box">
-    <p class="card-title small-title">終了時間</p>
-    <div class="wheel-picker" data-target="endTime">
-      <div class="wheel-column" id="endHourWheel"></div>
-      <div class="wheel-column" id="endMinuteWheel"></div>
-    </div>
-    <input type="hidden" id="endTime" value="" />
+    <label class="small-title" for="endTime">終了時間</label>
+    <input type="time" id="endTime" value="17:00" step="900" />
   </div>
 
   <p class="helper-text">出発地点を出てから、出発地点へ戻るまでの時間です。</p>
 </div>
 
       <div class="card">
-        <label for="budgetRange">予算</label>
-        <div class="range-row">
-          <input id="budgetRange" type="range" min="1000" max="50000" step="1000" value="10000" />
-          <span id="budgetText">10,000円</span>
-        </div>
+        <label for="budgetSelect">予算（1人当たり）</label>
+        <select id="budgetSelect" class="scroll-select"></select>
       </div>
 
       <p id="formMessage" class="form-message">すべての項目を入力してください。</p>
@@ -134,9 +133,7 @@
         スケジュール作成
       </button>
 
-      <div id="promptResult" class="prompt-result">
-        <p class="prompt-placeholder">作成されたスケジュールがここに表示されます。</p>
-      </div>
+      <div id="promptResult" class="prompt-result" hidden></div>
     </section>
 
     <section id="proposalScreen" class="screen">

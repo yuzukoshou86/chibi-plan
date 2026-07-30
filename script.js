@@ -6,11 +6,8 @@ const startBtn = document.getElementById("startBtn");
 const makePlanBtn = document.getElementById("makePlanBtn");
 const backBtn = document.getElementById("backBtn");
 
-const peopleRange = document.getElementById("peopleRange");
-const peopleText = document.getElementById("peopleText");
-
-const budgetRange = document.getElementById("budgetRange");
-const budgetText = document.getElementById("budgetText");
+const peopleSelect = document.getElementById("peopleSelect");
+const budgetSelect = document.getElementById("budgetSelect");
 
 const tripButtons = document.querySelectorAll(".trip-type");
 const stayOptions = document.getElementById("stayOptions");
@@ -21,16 +18,17 @@ const startTimeBox = document.getElementById("startTimeBox");
 const startTimeSelect = document.getElementById("startTime");
 const endTimeSelect = document.getElementById("endTime");
 
-const startHourWheel = document.getElementById("startHourWheel");
-const startMinuteWheel = document.getElementById("startMinuteWheel");
-const endHourWheel = document.getElementById("endHourWheel");
-const endMinuteWheel = document.getElementById("endMinuteWheel");
-
 const startPlaceInput = document.getElementById("startPlace");
+const stationStatus = document.getElementById("stationStatus");
 const formMessage = document.getElementById("formMessage");
 const promptResult = document.getElementById("promptResult");
 
 const senseRandom = document.getElementById("senseRandom");
+const dayRandom = document.getElementById("dayRandom");
+
+let stationValidationState = "idle";
+let validatedStation = "";
+let stationValidationTimer;
 
 /* 固定プロンプト */
 const FIXED_PROMPT = `
@@ -214,101 +212,6 @@ function showScreen(screen) {
   screen.classList.add("active");
 }
 
-/* ホイールの中身を作る */
-function createWheelItems(container, values) {
-  container.innerHTML = "";
-
-  values.forEach((value) => {
-    const item = document.createElement("div");
-    item.className = "wheel-item";
-    item.textContent = value;
-    item.dataset.value = value;
-    container.appendChild(item);
-  });
-}
-
-/* ホイール中央にある項目を取得 */
-function getCenterItem(container) {
-  const items = Array.from(container.querySelectorAll(".wheel-item"));
-  const containerCenter = container.getBoundingClientRect().top + container.clientHeight / 2;
-
-  let closestItem = items[0];
-  let closestDistance = Infinity;
-
-  items.forEach((item) => {
-    const itemCenter = item.getBoundingClientRect().top + item.clientHeight / 2;
-    const distance = Math.abs(containerCenter - itemCenter);
-
-    if (distance < closestDistance) {
-      closestDistance = distance;
-      closestItem = item;
-    }
-  });
-
-  return closestItem;
-}
-
-/* 選択中の見た目を更新 */
-function updateWheelSelected(container) {
-  const items = container.querySelectorAll(".wheel-item");
-  const selectedItem = getCenterItem(container);
-
-  items.forEach((item) => item.classList.remove("selected"));
-  selectedItem.classList.add("selected");
-
-  updateHiddenTimes();
-  validateForm();
-}
-
-/* hidden input に時間を入れる */
-function updateHiddenTimes() {
-  const startHour = getCenterItem(startHourWheel).dataset.value;
-  const startMinute = getCenterItem(startMinuteWheel).dataset.value;
-  const endHour = getCenterItem(endHourWheel).dataset.value;
-  const endMinute = getCenterItem(endMinuteWheel).dataset.value;
-
-  startTimeSelect.value = `${startHour}:${startMinute}`;
-  endTimeSelect.value = `${endHour}:${endMinute}`;
-}
-
-/* 指定した時間へスクロール */
-function scrollToValue(container, value) {
-  const item = container.querySelector(`[data-value="${value}"]`);
-  if (!item) return;
-
-  container.scrollTop = item.offsetTop - container.clientHeight / 2 + item.clientHeight / 2;
-  updateWheelSelected(container);
-}
-
-/* 時間ホイール作成 */
-function createTimeOptions() {
-  const hours = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, "0"));
-  const minutes = ["00", "15", "30", "45"];
-
-  createWheelItems(startHourWheel, hours);
-  createWheelItems(startMinuteWheel, minutes);
-  createWheelItems(endHourWheel, hours);
-  createWheelItems(endMinuteWheel, minutes);
-
-  [startHourWheel, startMinuteWheel, endHourWheel, endMinuteWheel].forEach((wheel) => {
-    wheel.addEventListener("scroll", () => {
-      clearTimeout(wheel.scrollTimer);
-      wheel.scrollTimer = setTimeout(() => {
-        updateWheelSelected(wheel);
-      }, 80);
-    });
-  });
-
-  setTimeout(() => {
-    scrollToValue(startHourWheel, "09");
-    scrollToValue(startMinuteWheel, "00");
-    scrollToValue(endHourWheel, "17");
-    scrollToValue(endMinuteWheel, "00");
-    updateHiddenTimes();
-    validateForm();
-  }, 0);
-}
-
 /* 今から出発の場合の現在時刻 15分丸め */
 function getCurrentRoundedTime() {
   const now = new Date();
@@ -352,8 +255,8 @@ function getUserCondition() {
     dayTheme: getCheckedValues("dayMood"),
     senses: getCheckedValues("senseMood"),
     departure: startPlaceInput.value.trim(),
-    people: peopleText.textContent,
-    budget: budgetText.textContent,
+    people: `${peopleSelect.value}人`,
+    budget: `${Number(budgetSelect.value).toLocaleString()}円`,
     tripType: tripType,
     startType: startType,
     startTime: startTypeValue === "now" ? getCurrentRoundedTime() : startTimeSelect.value,
@@ -413,20 +316,81 @@ function validateForm() {
   const selectedStartType = document.querySelector(".start-type.selected");
   const startTypeValue = selectedStartType ? selectedStartType.dataset.startType : "";
 
+  const stationIsValid =
+    stationValidationState === "valid" &&
+    startPlaceInput.value.trim() === validatedStation;
+
   const isValid =
     getCheckedValues("dayMood").length > 0 &&
     getCheckedValues("senseMood").length > 0 &&
-    startPlaceInput.value.trim() !== "" &&
-    peopleText.textContent !== "" &&
-    budgetText.textContent !== "" &&
+    stationIsValid &&
+    peopleSelect.value !== "" &&
+    budgetSelect.value !== "" &&
     getSelectedButtonText(".trip-type.selected") !== "" &&
     endTimeSelect.value !== "" &&
     (startTypeValue === "now" || startTimeSelect.value !== "");
 
   makePlanBtn.disabled = !isValid;
-  formMessage.textContent = isValid
-    ? "入力できました。スケジュール作成できます。"
-    : "すべての項目を入力してください。";
+  if (stationValidationState === "checking") {
+    formMessage.textContent = "出発駅を確認しています。";
+  } else {
+    formMessage.textContent = isValid
+      ? "入力できました。スケジュール作成できます。"
+      : "すべての項目を入力してください。";
+  }
+}
+
+function setStationStatus(message, state = "") {
+  stationStatus.textContent = message;
+  stationStatus.className = `field-status${state ? ` ${state}` : ""}`;
+}
+
+async function validateStation() {
+  const station = startPlaceInput.value.trim();
+
+  if (!station.endsWith("駅")) {
+    stationValidationState = "invalid";
+    validatedStation = "";
+    setStationStatus("「大阪駅」のように、正式な駅名を「駅」まで入力してください。", "error");
+    validateForm();
+    return;
+  }
+
+  stationValidationState = "checking";
+  setStationStatus("実在する駅名か確認しています…", "checking");
+  validateForm();
+
+  try {
+    const response = await fetch("/api/validate-station", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ station })
+    });
+    const result = await response.json();
+
+    if (!response.ok) {
+      throw new Error(result.error || "駅名を確認できませんでした。");
+    }
+
+    if (startPlaceInput.value.trim() !== station) return;
+
+    if (result.valid) {
+      stationValidationState = "valid";
+      validatedStation = station;
+      setStationStatus("実在する駅名を確認できました。", "success");
+    } else {
+      stationValidationState = "invalid";
+      validatedStation = "";
+      setStationStatus("駅名を確認できませんでした。正式な駅名を入力してください。", "error");
+    }
+  } catch (error) {
+    if (startPlaceInput.value.trim() !== station) return;
+    stationValidationState = "error";
+    validatedStation = "";
+    setStationStatus(`${error.message} もう一度入力してください。`, "error");
+  }
+
+  validateForm();
 }
 
 /* Vercel API経由でAIへ送信 */
@@ -461,6 +425,7 @@ makePlanBtn.addEventListener("click", async () => {
   const condition = getUserCondition();
   const promptJson = createPromptJson(condition);
 
+  promptResult.hidden = false;
   promptResult.innerHTML = `
     <div class="loading-state" role="status">
       <span class="loading-leaf">🌱</span>
@@ -501,18 +466,8 @@ backBtn.addEventListener("click", () => {
   showScreen(conditionScreen);
 });
 
-/* 人数 */
-peopleRange.addEventListener("input", () => {
-  peopleText.textContent = `${peopleRange.value}人`;
-  validateForm();
-});
-
-/* 予算 */
-budgetRange.addEventListener("input", () => {
-  const budget = Number(budgetRange.value).toLocaleString();
-  budgetText.textContent = `${budget}円`;
-  validateForm();
-});
+peopleSelect.addEventListener("change", validateForm);
+budgetSelect.addEventListener("change", validateForm);
 
 /* 日帰り・お泊まり */
 tripButtons.forEach((button) => {
@@ -574,13 +529,58 @@ document.querySelectorAll('input[name="senseMood"]').forEach((checkbox) => {
   });
 });
 
-/* 一日のテーマ */
+/* 一日のテーマのおまかせ選択時は他を解除 */
 document.querySelectorAll('input[name="dayMood"]').forEach((checkbox) => {
-  checkbox.addEventListener("change", validateForm);
+  checkbox.addEventListener("change", () => {
+    const dayCheckboxes = Array.from(document.querySelectorAll('input[name="dayMood"]'));
+
+    if (checkbox.value === "おまかせ" && checkbox.checked) {
+      dayCheckboxes.forEach((item) => {
+        if (item.value !== "おまかせ") item.checked = false;
+      });
+    }
+
+    if (checkbox.value !== "おまかせ" && checkbox.checked) {
+      dayRandom.checked = false;
+    }
+
+    validateForm();
+  });
 });
 
-startPlaceInput.addEventListener("input", validateForm);
+startPlaceInput.addEventListener("input", () => {
+  clearTimeout(stationValidationTimer);
+  stationValidationState = "idle";
+  validatedStation = "";
+
+  const station = startPlaceInput.value.trim();
+  if (!station) {
+    setStationStatus("正式な駅名を「駅」まで入力してください。");
+  } else if (!station.endsWith("駅")) {
+    setStationStatus("駅名の最後まで入力してください。", "error");
+  } else {
+    setStationStatus("入力が終わると駅名を確認します。", "checking");
+    stationValidationTimer = setTimeout(validateStation, 700);
+  }
+
+  validateForm();
+});
+
+startPlaceInput.addEventListener("blur", () => {
+  clearTimeout(stationValidationTimer);
+  if (startPlaceInput.value.trim() !== validatedStation) validateStation();
+});
+
+startTimeSelect.addEventListener("change", validateForm);
+endTimeSelect.addEventListener("change", validateForm);
+
+for (let budget = 1000; budget <= 50000; budget += 1000) {
+  const option = document.createElement("option");
+  option.value = String(budget);
+  option.textContent = `${budget.toLocaleString()}円`;
+  option.selected = budget === 10000;
+  budgetSelect.appendChild(option);
+}
 
 /* 初期処理 */
-createTimeOptions();
 validateForm();
