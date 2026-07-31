@@ -414,9 +414,29 @@ select {
   font-size: 20px;
 }
 
-.result-reason {
+.reason-list {
+  display: grid;
+  gap: 10px;
   margin: 0;
-  line-height: 1.8;
+  padding: 0;
+  list-style: none;
+}
+
+.reason-list li {
+  position: relative;
+  padding: 12px 14px 12px 40px;
+  border-radius: 15px;
+  background: #f5f0df;
+  line-height: 1.65;
+}
+
+.reason-list li::before {
+  content: "✓";
+  position: absolute;
+  top: 12px;
+  left: 15px;
+  color: #5b9745;
+  font-weight: bold;
 }
 
 .plan-timeline {
@@ -486,6 +506,25 @@ select {
   line-height: 1.7;
 }
 
+.source-link {
+  display: inline-flex;
+  margin-top: 11px;
+  align-items: center;
+  padding: 7px 12px;
+  border: 1px solid #9ebd78;
+  border-radius: 99px;
+  color: #477332;
+  font-size: 13px;
+  font-weight: bold;
+  text-decoration: none;
+}
+
+.source-link:hover,
+.source-link:focus-visible {
+  background: #edf5df;
+  text-decoration: underline;
+}
+
 .schedule-travel {
   color: #6b8f46;
   font-size: 14px;
@@ -524,28 +563,72 @@ select {
 
 .total-cost-card {
   background: #fff3c9;
-  text-align: center;
 }
 
 .result-card-label {
   margin: 0;
+  text-align: center;
   font-weight: bold;
 }
 
 .total-cost {
   margin: 12px 0 0;
   color: #735c26;
-  font-size: clamp(28px, 6vw, 42px);
+  font-size: clamp(30px, 7vw, 46px);
   font-weight: bold;
+  line-height: 1.2;
+  text-align: center;
+  overflow-wrap: anywhere;
 }
 
-.caution-card ul {
+.cost-breakdown {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0;
+  margin: 20px 0 0;
+  overflow: hidden;
+  border: 1px solid #e2cb87;
+  border-radius: 15px;
+  background: rgba(255, 255, 255, 0.55);
+}
+
+.cost-breakdown dt,
+.cost-breakdown dd {
   margin: 0;
-  padding-left: 1.3em;
+  padding: 10px 12px;
+  border-bottom: 1px solid #eadba9;
+  font-size: 14px;
 }
 
-.caution-card li {
-  margin-top: 8px;
+.cost-breakdown dt:last-of-type,
+.cost-breakdown dd:last-of-type {
+  border-bottom: 0;
+}
+
+.cost-breakdown dd {
+  font-weight: bold;
+  text-align: right;
+}
+
+.caution-list {
+  display: grid;
+  gap: 12px;
+}
+
+.caution-item {
+  padding: 14px 16px;
+  border-left: 5px solid #e4b64e;
+  border-radius: 5px 15px 15px 5px;
+  background: #fff8e8;
+}
+
+.caution-item h4 {
+  margin: 0 0 7px;
+  font-size: 16px;
+}
+
+.caution-item p {
+  margin: 0;
   line-height: 1.7;
 }
 
@@ -693,6 +776,10 @@ select {
 
   .schedule-card-body {
     padding: 14px;
+  }
+
+  .total-cost {
+    font-size: 34px;
   }
 }
 

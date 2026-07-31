@@ -45,8 +45,10 @@ export default async function handler(request, response) {
   const outputInstructions = `
 回答は日本語で、ユーザーがそのまま実行できる現実的なスケジュールにしてください。
 scheduleの各項目には、時刻、具体的な店舗・施設名、移動方法と所要時間、体験内容、ちびタスク、1人当たりの概算費用を入れてください。
-summaryは一日の魅力を短く、reasonはこの組み合わせを選んだ理由を簡潔に書いてください。
-cautionsには営業時間・定休日・予約など当日確認が必要な事項を入れてください。
+summaryは一日の魅力を短く、reasonPointsにはこの組み合わせを選んだ理由を2〜4項目で入れてください。
+cautionsには営業時間・定休日・予約など当日確認が必要な事項を、1件ずつタイトルと詳細に分けて入れてください。
+本文にはURLやMarkdownリンクを書かず、参照先はsourceLabelとsourceUrlに分けてください。公式URLがない場合は両方を空文字にしてください。
+totalCost.amountには合計金額だけを短く書き、内訳はbreakdownへ項目別に分けてください。
 施設の営業状況など最新情報が必要な場合はWeb検索を使い、確認できない情報を断定しないでください。
 `.trim();
 
@@ -73,7 +75,7 @@ cautionsには営業時間・定休日・予約など当日確認が必要な事
               type: "object",
               properties: {
                 title: { type: "string" },
-                reason: { type: "string" },
+                reasonPoints: { type: "array", items: { type: "string" } },
                 area: { type: "string" },
                 summary: { type: "string" },
                 schedule: {
@@ -86,16 +88,50 @@ cautionsには営業時間・定休日・予約など当日確認が必要な事
                       travel: { type: "string" },
                       experience: { type: "string" },
                       task: { type: "string" },
-                      cost: { type: "string" }
+                      cost: { type: "string" },
+                      sourceLabel: { type: "string" },
+                      sourceUrl: { type: "string" }
                     },
-                    required: ["time", "place", "travel", "experience", "task", "cost"],
+                    required: ["time", "place", "travel", "experience", "task", "cost", "sourceLabel", "sourceUrl"],
                     additionalProperties: false
                   }
                 },
-                totalCost: { type: "string" },
-                cautions: { type: "array", items: { type: "string" } }
+                totalCost: {
+                  type: "object",
+                  properties: {
+                    amount: { type: "string" },
+                    breakdown: {
+                      type: "array",
+                      items: {
+                        type: "object",
+                        properties: {
+                          label: { type: "string" },
+                          amount: { type: "string" }
+                        },
+                        required: ["label", "amount"],
+                        additionalProperties: false
+                      }
+                    }
+                  },
+                  required: ["amount", "breakdown"],
+                  additionalProperties: false
+                },
+                cautions: {
+                  type: "array",
+                  items: {
+                    type: "object",
+                    properties: {
+                      title: { type: "string" },
+                      detail: { type: "string" },
+                      sourceLabel: { type: "string" },
+                      sourceUrl: { type: "string" }
+                    },
+                    required: ["title", "detail", "sourceLabel", "sourceUrl"],
+                    additionalProperties: false
+                  }
+                }
               },
-              required: ["title", "reason", "area", "summary", "schedule", "totalCost", "cautions"],
+              required: ["title", "reasonPoints", "area", "summary", "schedule", "totalCost", "cautions"],
               additionalProperties: false
             }
           }

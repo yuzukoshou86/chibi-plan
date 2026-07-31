@@ -499,6 +499,17 @@ function addTextElement(parent, tagName, className, text) {
   return element;
 }
 
+function addSourceLink(parent, label, url) {
+  if (!url || !/^https:\/\//i.test(url)) return;
+  const link = document.createElement("a");
+  link.className = "source-link";
+  link.href = url;
+  link.target = "_blank";
+  link.rel = "noopener noreferrer";
+  link.textContent = `${label || "公式サイト"}を見る ↗`;
+  parent.appendChild(link);
+}
+
 function showProposalLoading() {
   proposalTitle.textContent = "ぴったりの一日を考えています";
   proposalLead.textContent = "スポットや移動時間を調べています。少しお待ちください。";
@@ -519,7 +530,10 @@ function renderPlan(plan) {
   overview.className = "result-overview";
   addTextElement(overview, "span", "area-label", `📍 ${plan.area}`);
   addTextElement(overview, "h3", "result-section-title", "このプランにした理由");
-  addTextElement(overview, "p", "result-reason", plan.reason);
+  const reasonList = document.createElement("ul");
+  reasonList.className = "reason-list";
+  plan.reasonPoints.forEach((reason) => addTextElement(reasonList, "li", "", reason));
+  overview.appendChild(reasonList);
   proposalContent.appendChild(overview);
 
   const scheduleSection = document.createElement("section");
@@ -545,6 +559,7 @@ function renderPlan(plan) {
     addTextElement(body, "h4", "schedule-place", item.place);
     if (item.travel) addTextElement(body, "p", "schedule-travel", `🚶 ${item.travel}`);
     addTextElement(body, "p", "schedule-experience", item.experience);
+    addSourceLink(body, item.sourceLabel, item.sourceUrl);
 
     const task = document.createElement("div");
     task.className = "chibi-task";
@@ -566,14 +581,29 @@ function renderPlan(plan) {
   const costCard = document.createElement("section");
   costCard.className = "total-cost-card";
   addTextElement(costCard, "p", "result-card-label", "1人当たりの概算合計");
-  addTextElement(costCard, "p", "total-cost", plan.totalCost);
+  addTextElement(costCard, "p", "total-cost", plan.totalCost.amount);
+  const breakdown = document.createElement("dl");
+  breakdown.className = "cost-breakdown";
+  plan.totalCost.breakdown.forEach((item) => {
+    addTextElement(breakdown, "dt", "", item.label);
+    addTextElement(breakdown, "dd", "", item.amount);
+  });
+  costCard.appendChild(breakdown);
   footerGrid.appendChild(costCard);
 
   const cautionCard = document.createElement("section");
   cautionCard.className = "caution-card";
   addTextElement(cautionCard, "h3", "result-section-title", "当日の確認ポイント");
-  const cautionList = document.createElement("ul");
-  plan.cautions.forEach((caution) => addTextElement(cautionList, "li", "", caution));
+  const cautionList = document.createElement("div");
+  cautionList.className = "caution-list";
+  plan.cautions.forEach((caution) => {
+    const item = document.createElement("article");
+    item.className = "caution-item";
+    addTextElement(item, "h4", "", caution.title);
+    addTextElement(item, "p", "", caution.detail);
+    addSourceLink(item, caution.sourceLabel, caution.sourceUrl);
+    cautionList.appendChild(item);
+  });
   cautionCard.appendChild(cautionList);
   footerGrid.appendChild(cautionCard);
   proposalContent.appendChild(footerGrid);
