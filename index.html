@@ -140,37 +140,19 @@
         スケジュール作成
       </button>
 
-      <div id="promptResult" class="prompt-result" hidden></div>
     </section>
 
     <section id="proposalScreen" class="screen">
       <div class="proposal-header">
         <button id="backBtn" class="back-btn">← 戻る</button>
         <div>
-          <h2>おすすめプラン</h2>
-          <p id="proposalLead">雨の日にもおすすめ！近場で気軽に楽しめるプラン</p>
+          <p class="result-eyebrow">ちびプランからの提案</p>
+          <h2 id="proposalTitle">おすすめプラン</h2>
+          <p id="proposalLead"></p>
         </div>
       </div>
 
-      <div class="proposal-area">
-        <div class="plan-card">
-          <p class="area-label">大阪エリア</p>
-          <h3>プランA</h3>
-          <p>ここにスケジュール内容を表示</p>
-        </div>
-
-        <div class="plan-card">
-          <p class="area-label">神戸エリア</p>
-          <h3>プランB</h3>
-          <p>ここにスケジュール内容を表示</p>
-        </div>
-
-        <div class="plan-card">
-          <p class="area-label">京都エリア</p>
-          <h3>プランC</h3>
-          <p>ここにスケジュール内容を表示</p>
-        </div>
-      </div>
+      <div id="proposalContent" class="proposal-content"></div>
     </section>
 
   </main>

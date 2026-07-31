@@ -43,11 +43,11 @@ export default async function handler(request, response) {
   }
 
   const outputInstructions = `
-回答は日本語で、ユーザーがそのまま実行できる見やすいスケジュールとして作成してください。
-冒頭にプラン名と、このプランを選んだ理由を簡潔に示してください。
-各予定には時刻、具体的な店舗・施設名、移動方法と所要時間、体験内容、ちびタスク、1人当たりの概算費用を含めてください。
-最後に1人当たりの費用合計と、営業時間・定休日など当日確認が必要な注意事項を示してください。
-施設の営業状況など最新情報が必要な場合はWeb検索を使い、確認できない情報を事実のように断定しないでください。
+回答は日本語で、ユーザーがそのまま実行できる現実的なスケジュールにしてください。
+scheduleの各項目には、時刻、具体的な店舗・施設名、移動方法と所要時間、体験内容、ちびタスク、1人当たりの概算費用を入れてください。
+summaryは一日の魅力を短く、reasonはこの組み合わせを選んだ理由を簡潔に書いてください。
+cautionsには営業時間・定休日・予約など当日確認が必要な事項を入れてください。
+施設の営業状況など最新情報が必要な場合はWeb検索を使い、確認できない情報を断定しないでください。
 `.trim();
 
   try {
@@ -63,7 +63,43 @@ export default async function handler(request, response) {
         tools: [{ type: "web_search" }],
         input: `${prompt}\n\n【出力方法】\n${outputInstructions}`,
         max_output_tokens: 5000,
-        text: { verbosity: "medium" }
+        text: {
+          verbosity: "medium",
+          format: {
+            type: "json_schema",
+            name: "chibi_plan_schedule",
+            strict: true,
+            schema: {
+              type: "object",
+              properties: {
+                title: { type: "string" },
+                reason: { type: "string" },
+                area: { type: "string" },
+                summary: { type: "string" },
+                schedule: {
+                  type: "array",
+                  items: {
+                    type: "object",
+                    properties: {
+                      time: { type: "string" },
+                      place: { type: "string" },
+                      travel: { type: "string" },
+                      experience: { type: "string" },
+                      task: { type: "string" },
+                      cost: { type: "string" }
+                    },
+                    required: ["time", "place", "travel", "experience", "task", "cost"],
+                    additionalProperties: false
+                  }
+                },
+                totalCost: { type: "string" },
+                cautions: { type: "array", items: { type: "string" } }
+              },
+              required: ["title", "reason", "area", "summary", "schedule", "totalCost", "cautions"],
+              additionalProperties: false
+            }
+          }
+        }
       })
     });
 
@@ -77,16 +113,20 @@ export default async function handler(request, response) {
       return sendJson(response, openAIResponse.status, { error: message });
     }
 
-    const plan = getOutputText(result);
+    const planText = getOutputText(result);
 
-    if (!plan) {
+    if (!planText) {
       console.error("OpenAI API returned no output_text:", result);
       return sendJson(response, 502, {
         error: "AIからプラン本文を受け取れませんでした。"
       });
     }
 
-    return sendJson(response, 200, { plan });
+    try {
+      return sendJson(response, 200, { plan: JSON.parse(planText) });
+    } catch {
+      return sendJson(response, 502, { error: "AIの回答を画面用に整形できませんでした。" });
+    }
   } catch (error) {
     console.error(
       "Plan generation failed:",

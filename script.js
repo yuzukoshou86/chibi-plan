@@ -24,7 +24,9 @@ const startPlaceInput = document.getElementById("startPlace");
 const stationSuggestions = document.getElementById("stationSuggestions");
 const stationStatus = document.getElementById("stationStatus");
 const formMessage = document.getElementById("formMessage");
-const promptResult = document.getElementById("promptResult");
+const proposalTitle = document.getElementById("proposalTitle");
+const proposalLead = document.getElementById("proposalLead");
+const proposalContent = document.getElementById("proposalContent");
 
 const senseRandom = document.getElementById("senseRandom");
 const dayRandom = document.getElementById("dayRandom");
@@ -489,6 +491,105 @@ async function sendToAI(promptJson) {
   return result.plan;
 }
 
+function addTextElement(parent, tagName, className, text) {
+  const element = document.createElement(tagName);
+  if (className) element.className = className;
+  element.textContent = text;
+  parent.appendChild(element);
+  return element;
+}
+
+function showProposalLoading() {
+  proposalTitle.textContent = "ぴったりの一日を考えています";
+  proposalLead.textContent = "スポットや移動時間を調べています。少しお待ちください。";
+  proposalContent.innerHTML = `
+    <div class="result-loading" role="status">
+      <span class="loading-leaf">🌱</span>
+      <div class="loading-lines"><span></span><span></span><span></span></div>
+    </div>
+  `;
+}
+
+function renderPlan(plan) {
+  proposalTitle.textContent = plan.title;
+  proposalLead.textContent = plan.summary;
+  proposalContent.innerHTML = "";
+
+  const overview = document.createElement("section");
+  overview.className = "result-overview";
+  addTextElement(overview, "span", "area-label", `📍 ${plan.area}`);
+  addTextElement(overview, "h3", "result-section-title", "このプランにした理由");
+  addTextElement(overview, "p", "result-reason", plan.reason);
+  proposalContent.appendChild(overview);
+
+  const scheduleSection = document.createElement("section");
+  scheduleSection.className = "schedule-section";
+  addTextElement(scheduleSection, "h3", "result-section-title", "一日のスケジュール");
+
+  const timeline = document.createElement("div");
+  timeline.className = "plan-timeline";
+
+  plan.schedule.forEach((item, index) => {
+    const card = document.createElement("article");
+    card.className = "schedule-item";
+    card.style.setProperty("--item-index", index);
+
+    const marker = document.createElement("div");
+    marker.className = "timeline-marker";
+    marker.textContent = String(index + 1);
+    card.appendChild(marker);
+
+    const body = document.createElement("div");
+    body.className = "schedule-card-body";
+    addTextElement(body, "p", "schedule-time", item.time);
+    addTextElement(body, "h4", "schedule-place", item.place);
+    if (item.travel) addTextElement(body, "p", "schedule-travel", `🚶 ${item.travel}`);
+    addTextElement(body, "p", "schedule-experience", item.experience);
+
+    const task = document.createElement("div");
+    task.className = "chibi-task";
+    addTextElement(task, "span", "task-label", "🌱 ちびタスク");
+    addTextElement(task, "p", "", item.task);
+    body.appendChild(task);
+
+    addTextElement(body, "p", "schedule-cost", `1人当たり ${item.cost}`);
+    card.appendChild(body);
+    timeline.appendChild(card);
+  });
+
+  scheduleSection.appendChild(timeline);
+  proposalContent.appendChild(scheduleSection);
+
+  const footerGrid = document.createElement("div");
+  footerGrid.className = "result-footer-grid";
+
+  const costCard = document.createElement("section");
+  costCard.className = "total-cost-card";
+  addTextElement(costCard, "p", "result-card-label", "1人当たりの概算合計");
+  addTextElement(costCard, "p", "total-cost", plan.totalCost);
+  footerGrid.appendChild(costCard);
+
+  const cautionCard = document.createElement("section");
+  cautionCard.className = "caution-card";
+  addTextElement(cautionCard, "h3", "result-section-title", "当日の確認ポイント");
+  const cautionList = document.createElement("ul");
+  plan.cautions.forEach((caution) => addTextElement(cautionList, "li", "", caution));
+  cautionCard.appendChild(cautionList);
+  footerGrid.appendChild(cautionCard);
+  proposalContent.appendChild(footerGrid);
+}
+
+function showProposalError(message) {
+  proposalTitle.textContent = "プランを作成できませんでした";
+  proposalLead.textContent = "入力内容は残っています。戻ってもう一度お試しください。";
+  proposalContent.innerHTML = "";
+  const errorCard = document.createElement("div");
+  errorCard.className = "error-state result-error";
+  addTextElement(errorCard, "h3", "", "通信中に問題が発生しました");
+  addTextElement(errorCard, "p", "", message);
+  proposalContent.appendChild(errorCard);
+}
+
 /* ホーム → 条件設定 */
 startBtn.addEventListener("click", () => {
   showScreen(conditionScreen);
@@ -500,36 +601,18 @@ makePlanBtn.addEventListener("click", async () => {
   const condition = getUserCondition();
   const promptJson = createPromptJson(condition);
 
-  promptResult.hidden = false;
-  promptResult.innerHTML = `
-    <div class="loading-state" role="status">
-      <span class="loading-leaf">🌱</span>
-      <div>
-        <h3>ぴったりの一日を考えています</h3>
-        <p>スポットや移動時間を調べています。少しお待ちください。</p>
-      </div>
-    </div>
-  `;
+  showProposalLoading();
+  showScreen(proposalScreen);
+  window.scrollTo({ top: 0, behavior: "smooth" });
 
   makePlanBtn.disabled = true;
   makePlanBtn.textContent = "作成中…";
 
   try {
     const plan = await sendToAI(promptJson);
-
-    promptResult.innerHTML = `
-      <h3>🌿 ちびプランからの提案</h3>
-      <pre class="ai-plan"></pre>
-    `;
-    promptResult.querySelector(".ai-plan").textContent = plan;
+    renderPlan(plan);
   } catch (error) {
-    promptResult.innerHTML = `
-      <div class="error-state" role="alert">
-        <h3>プランを作成できませんでした</h3>
-        <p></p>
-      </div>
-    `;
-    promptResult.querySelector(".error-state p").textContent = error.message;
+    showProposalError(error.message);
   } finally {
     makePlanBtn.textContent = "スケジュール作成";
     validateForm();
