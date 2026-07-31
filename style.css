@@ -414,6 +414,26 @@ select {
   font-size: 20px;
 }
 
+.day-heading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.day-label {
+  flex: none;
+  padding: 7px 14px;
+  border-radius: 999px;
+  background: #ffd86b;
+  font-weight: bold;
+}
+
+.day-date {
+  margin: 0;
+  font-size: 19px;
+}
+
 .reason-list {
   display: grid;
   gap: 10px;
@@ -504,25 +524,6 @@ select {
 .schedule-cost {
   margin: 8px 0 0;
   line-height: 1.7;
-}
-
-.source-link {
-  display: inline-flex;
-  margin-top: 11px;
-  align-items: center;
-  padding: 7px 12px;
-  border: 1px solid #9ebd78;
-  border-radius: 99px;
-  color: #477332;
-  font-size: 13px;
-  font-weight: bold;
-  text-decoration: none;
-}
-
-.source-link:hover,
-.source-link:focus-visible {
-  background: #edf5df;
-  text-decoration: underline;
 }
 
 .schedule-travel {

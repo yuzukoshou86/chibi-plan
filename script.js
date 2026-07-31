@@ -499,17 +499,6 @@ function addTextElement(parent, tagName, className, text) {
   return element;
 }
 
-function addSourceLink(parent, label, url) {
-  if (!url || !/^https:\/\//i.test(url)) return;
-  const link = document.createElement("a");
-  link.className = "source-link";
-  link.href = url;
-  link.target = "_blank";
-  link.rel = "noopener noreferrer";
-  link.textContent = `${label || "公式サイト"}を見る ↗`;
-  parent.appendChild(link);
-}
-
 function showProposalLoading() {
   proposalTitle.textContent = "ぴったりの一日を考えています";
   proposalLead.textContent = "スポットや移動時間を調べています。少しお待ちください。";
@@ -536,44 +525,50 @@ function renderPlan(plan) {
   overview.appendChild(reasonList);
   proposalContent.appendChild(overview);
 
-  const scheduleSection = document.createElement("section");
-  scheduleSection.className = "schedule-section";
-  addTextElement(scheduleSection, "h3", "result-section-title", "一日のスケジュール");
+  plan.days.forEach((day) => {
+    const scheduleSection = document.createElement("section");
+    scheduleSection.className = "schedule-section plan-day";
 
-  const timeline = document.createElement("div");
-  timeline.className = "plan-timeline";
+    const dayHeading = document.createElement("div");
+    dayHeading.className = "day-heading";
+    addTextElement(dayHeading, "span", "day-label", day.label);
+    if (day.date) addTextElement(dayHeading, "h3", "day-date", day.date);
+    scheduleSection.appendChild(dayHeading);
 
-  plan.schedule.forEach((item, index) => {
-    const card = document.createElement("article");
-    card.className = "schedule-item";
-    card.style.setProperty("--item-index", index);
+    const timeline = document.createElement("div");
+    timeline.className = "plan-timeline";
 
-    const marker = document.createElement("div");
-    marker.className = "timeline-marker";
-    marker.textContent = String(index + 1);
-    card.appendChild(marker);
+    day.schedule.forEach((item, index) => {
+      const card = document.createElement("article");
+      card.className = "schedule-item";
+      card.style.setProperty("--item-index", index);
 
-    const body = document.createElement("div");
-    body.className = "schedule-card-body";
-    addTextElement(body, "p", "schedule-time", item.time);
-    addTextElement(body, "h4", "schedule-place", item.place);
-    if (item.travel) addTextElement(body, "p", "schedule-travel", `🚶 ${item.travel}`);
-    addTextElement(body, "p", "schedule-experience", item.experience);
-    addSourceLink(body, item.sourceLabel, item.sourceUrl);
+      const marker = document.createElement("div");
+      marker.className = "timeline-marker";
+      marker.textContent = String(index + 1);
+      card.appendChild(marker);
 
-    const task = document.createElement("div");
-    task.className = "chibi-task";
-    addTextElement(task, "span", "task-label", "🌱 ちびタスク");
-    addTextElement(task, "p", "", item.task);
-    body.appendChild(task);
+      const body = document.createElement("div");
+      body.className = "schedule-card-body";
+      addTextElement(body, "p", "schedule-time", item.time);
+      addTextElement(body, "h4", "schedule-place", item.place);
+      if (item.travel) addTextElement(body, "p", "schedule-travel", `🚶 ${item.travel}`);
+      addTextElement(body, "p", "schedule-experience", item.experience);
 
-    addTextElement(body, "p", "schedule-cost", `1人当たり ${item.cost}`);
-    card.appendChild(body);
-    timeline.appendChild(card);
+      const task = document.createElement("div");
+      task.className = "chibi-task";
+      addTextElement(task, "span", "task-label", "🌱 ちびタスク");
+      addTextElement(task, "p", "", item.task);
+      body.appendChild(task);
+
+      addTextElement(body, "p", "schedule-cost", `1人当たり ${item.cost}`);
+      card.appendChild(body);
+      timeline.appendChild(card);
+    });
+
+    scheduleSection.appendChild(timeline);
+    proposalContent.appendChild(scheduleSection);
   });
-
-  scheduleSection.appendChild(timeline);
-  proposalContent.appendChild(scheduleSection);
 
   const footerGrid = document.createElement("div");
   footerGrid.className = "result-footer-grid";
@@ -601,7 +596,6 @@ function renderPlan(plan) {
     item.className = "caution-item";
     addTextElement(item, "h4", "", caution.title);
     addTextElement(item, "p", "", caution.detail);
-    addSourceLink(item, caution.sourceLabel, caution.sourceUrl);
     cautionList.appendChild(item);
   });
   cautionCard.appendChild(cautionList);
