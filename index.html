@@ -54,8 +54,9 @@
 
       <div class="card">
         <label for="startPlace">出発地</label>
-        <input id="startPlace" type="text" placeholder="例：大阪駅" autocomplete="off" />
-        <p id="stationStatus" class="field-status">正式な駅名を「駅」まで入力してください。</p>
+        <input id="startPlace" type="text" placeholder="例：大阪駅" autocomplete="off" aria-autocomplete="list" aria-controls="stationSuggestions" />
+        <div id="stationSuggestions" class="station-suggestions" role="listbox" hidden></div>
+        <p id="stationStatus" class="field-status">駅名を入力すると候補が表示されます。</p>
       </div>
 
       <div class="card">
@@ -110,13 +111,19 @@
   </div>
 
   <div id="startTimeBox" class="time-box hidden">
-    <label class="small-title" for="startTime">出発時間</label>
-    <input type="time" id="startTime" value="09:00" step="900" />
+    <p class="card-title small-title">出発時間</p>
+    <div class="time-select-group" aria-label="出発時間">
+      <select id="startHour" aria-label="出発時"></select><span>時</span>
+      <select id="startMinute" aria-label="出発分"></select><span>分</span>
+    </div>
   </div>
 
   <div class="time-box">
-    <label class="small-title" for="endTime">終了時間</label>
-    <input type="time" id="endTime" value="17:00" step="900" />
+    <p class="card-title small-title">終了時間</p>
+    <div class="time-select-group" aria-label="終了時間">
+      <select id="endHour" aria-label="終了時"></select><span>時</span>
+      <select id="endMinute" aria-label="終了分"></select><span>分</span>
+    </div>
   </div>
 
   <p class="helper-text">出発地点を出てから、出発地点へ戻るまでの時間です。</p>

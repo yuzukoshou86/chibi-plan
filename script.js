@@ -15,10 +15,13 @@ const hotelButtons = document.querySelectorAll(".hotel-btn");
 
 const startTypeButtons = document.querySelectorAll(".start-type");
 const startTimeBox = document.getElementById("startTimeBox");
-const startTimeSelect = document.getElementById("startTime");
-const endTimeSelect = document.getElementById("endTime");
+const startHourSelect = document.getElementById("startHour");
+const startMinuteSelect = document.getElementById("startMinute");
+const endHourSelect = document.getElementById("endHour");
+const endMinuteSelect = document.getElementById("endMinute");
 
 const startPlaceInput = document.getElementById("startPlace");
+const stationSuggestions = document.getElementById("stationSuggestions");
 const stationStatus = document.getElementById("stationStatus");
 const formMessage = document.getElementById("formMessage");
 const promptResult = document.getElementById("promptResult");
@@ -29,6 +32,7 @@ const dayRandom = document.getElementById("dayRandom");
 let stationValidationState = "idle";
 let validatedStation = "";
 let stationValidationTimer;
+let stationSuggestionRequestId = 0;
 
 /* 固定プロンプト */
 const FIXED_PROMPT = `
@@ -241,6 +245,10 @@ function getSelectedButtonText(selector) {
   return selected ? selected.textContent.trim() : "";
 }
 
+function getSelectedTime(hourSelect, minuteSelect) {
+  return `${hourSelect.value}:${minuteSelect.value}`;
+}
+
 /* 条件取得 */
 function getUserCondition() {
   const selectedTripType = document.querySelector(".trip-type.selected");
@@ -259,8 +267,10 @@ function getUserCondition() {
     budget: `${Number(budgetSelect.value).toLocaleString()}円`,
     tripType: tripType,
     startType: startType,
-    startTime: startTypeValue === "now" ? getCurrentRoundedTime() : startTimeSelect.value,
-    endTime: endTimeSelect.value
+    startTime: startTypeValue === "now"
+      ? getCurrentRoundedTime()
+      : getSelectedTime(startHourSelect, startMinuteSelect),
+    endTime: getSelectedTime(endHourSelect, endMinuteSelect)
   };
 
   if (tripType === "お泊まり") {
@@ -327,8 +337,9 @@ function validateForm() {
     peopleSelect.value !== "" &&
     budgetSelect.value !== "" &&
     getSelectedButtonText(".trip-type.selected") !== "" &&
-    endTimeSelect.value !== "" &&
-    (startTypeValue === "now" || startTimeSelect.value !== "");
+    endHourSelect.value !== "" &&
+    endMinuteSelect.value !== "" &&
+    (startTypeValue === "now" || (startHourSelect.value !== "" && startMinuteSelect.value !== ""));
 
   makePlanBtn.disabled = !isValid;
   if (stationValidationState === "checking") {
@@ -343,6 +354,70 @@ function validateForm() {
 function setStationStatus(message, state = "") {
   stationStatus.textContent = message;
   stationStatus.className = `field-status${state ? ` ${state}` : ""}`;
+}
+
+function hideStationSuggestions() {
+  stationSuggestions.hidden = true;
+  stationSuggestions.innerHTML = "";
+}
+
+function selectStation(station) {
+  startPlaceInput.value = station.name;
+  stationValidationState = "valid";
+  validatedStation = station.name;
+  setStationStatus(`${station.prefecture}の駅を選択しました。`, "success");
+  hideStationSuggestions();
+  validateForm();
+}
+
+function renderStationSuggestions(suggestions) {
+  stationSuggestions.innerHTML = "";
+
+  if (!suggestions.length) {
+    stationSuggestions.hidden = true;
+    setStationStatus("候補が見つかりませんでした。駅名を最後まで入力してください。", "error");
+    return;
+  }
+
+  suggestions.forEach((station) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "station-suggestion";
+    button.setAttribute("role", "option");
+    button.innerHTML = `<strong></strong><span></span>`;
+    button.querySelector("strong").textContent = station.name;
+    button.querySelector("span").textContent = `${station.prefecture}・${station.kana}`;
+    button.addEventListener("mousedown", (event) => event.preventDefault());
+    button.addEventListener("click", () => selectStation(station));
+    stationSuggestions.appendChild(button);
+  });
+
+  stationSuggestions.hidden = false;
+  setStationStatus("候補から出発駅を選んでください。", "checking");
+}
+
+async function searchStationSuggestions(query) {
+  const requestId = ++stationSuggestionRequestId;
+  setStationStatus("駅の候補を検索しています…", "checking");
+
+  try {
+    const response = await fetch(`/api/station-suggestions?q=${encodeURIComponent(query)}`);
+    const result = await response.json();
+    if (requestId !== stationSuggestionRequestId) return;
+    if (!response.ok) throw new Error(result.error || "駅の候補を検索できませんでした。");
+
+    const suggestions = result.suggestions || [];
+    const exact = suggestions.find((station) => station.name === startPlaceInput.value.trim());
+    if (exact) {
+      selectStation(exact);
+      return;
+    }
+    renderStationSuggestions(suggestions);
+  } catch (error) {
+    if (requestId !== stationSuggestionRequestId) return;
+    hideStationSuggestions();
+    setStationStatus(error.message, "error");
+  }
 }
 
 async function validateStation() {
@@ -550,17 +625,19 @@ document.querySelectorAll('input[name="dayMood"]').forEach((checkbox) => {
 
 startPlaceInput.addEventListener("input", () => {
   clearTimeout(stationValidationTimer);
+  stationSuggestionRequestId += 1;
   stationValidationState = "idle";
   validatedStation = "";
+  hideStationSuggestions();
 
   const station = startPlaceInput.value.trim();
   if (!station) {
-    setStationStatus("正式な駅名を「駅」まで入力してください。");
-  } else if (!station.endsWith("駅")) {
-    setStationStatus("駅名の最後まで入力してください。", "error");
+    setStationStatus("駅名を入力すると候補が表示されます。");
+  } else if (station.replace(/駅$/, "").length < 2) {
+    setStationStatus("駅名を2文字以上入力してください。", "checking");
   } else {
-    setStationStatus("入力が終わると駅名を確認します。", "checking");
-    stationValidationTimer = setTimeout(validateStation, 700);
+    setStationStatus("入力が終わると候補を検索します。", "checking");
+    stationValidationTimer = setTimeout(() => searchStationSuggestions(station), 550);
   }
 
   validateForm();
@@ -568,11 +645,39 @@ startPlaceInput.addEventListener("input", () => {
 
 startPlaceInput.addEventListener("blur", () => {
   clearTimeout(stationValidationTimer);
-  if (startPlaceInput.value.trim() !== validatedStation) validateStation();
+  setTimeout(() => {
+    hideStationSuggestions();
+    if (startPlaceInput.value.trim().endsWith("駅") && startPlaceInput.value.trim() !== validatedStation) {
+      validateStation();
+    }
+  }, 180);
 });
 
-startTimeSelect.addEventListener("change", validateForm);
-endTimeSelect.addEventListener("change", validateForm);
+[startHourSelect, startMinuteSelect, endHourSelect, endMinuteSelect]
+  .forEach((select) => select.addEventListener("change", validateForm));
+
+for (let hour = 0; hour < 24; hour += 1) {
+  [startHourSelect, endHourSelect].forEach((select) => {
+    const option = document.createElement("option");
+    option.value = String(hour).padStart(2, "0");
+    option.textContent = String(hour).padStart(2, "0");
+    select.appendChild(option);
+  });
+}
+
+["00", "15", "30", "45"].forEach((minute) => {
+  [startMinuteSelect, endMinuteSelect].forEach((select) => {
+    const option = document.createElement("option");
+    option.value = minute;
+    option.textContent = minute;
+    select.appendChild(option);
+  });
+});
+
+startHourSelect.value = "09";
+startMinuteSelect.value = "00";
+endHourSelect.value = "17";
+endMinuteSelect.value = "00";
 
 for (let budget = 1000; budget <= 50000; budget += 1000) {
   const option = document.createElement("option");
