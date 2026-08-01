@@ -36,6 +36,7 @@ let stationValidationState = "idle";
 let validatedStation = "";
 let stationValidationTimer;
 let stationSuggestionRequestId = 0;
+let proposalLoadingTimer;
 
 /* 固定プロンプト */
 const FIXED_PROMPT = `
@@ -525,18 +526,84 @@ function addTextElement(parent, tagName, className, text) {
   return element;
 }
 
-function showProposalLoading() {
-  proposalTitle.textContent = "ぴったりの一日を考えています";
-  proposalLead.textContent = "スポットや移動時間を調べています。少しお待ちください。";
+function getLoadingEstimate(condition) {
+  if (condition.tripType !== "お泊まり") {
+    return { label: "約30〜60秒", targetSeconds: 50 };
+  }
+
+  const nights = Number.parseInt(condition.stayNights, 10) || 1;
+  if (nights === 1) return { label: "約60〜90秒", targetSeconds: 75 };
+  if (nights === 2) return { label: "約80〜120秒", targetSeconds: 100 };
+  return { label: "約90〜150秒", targetSeconds: 125 };
+}
+
+function clearProposalLoading() {
+  if (proposalLoadingTimer) {
+    clearInterval(proposalLoadingTimer);
+    proposalLoadingTimer = undefined;
+  }
+}
+
+function showProposalLoading(condition) {
+  clearProposalLoading();
+  const estimate = getLoadingEstimate(condition);
+  const loadingSteps = [
+    "条件に合うエリアを探しています",
+    "営業時間と予算を確認しています",
+    "移動しやすい順番に整えています",
+    "楽しいちびタスクを考えています"
+  ];
+
+  proposalTitle.textContent = "あなただけの一日を育てています";
+  proposalLead.textContent = `完成までの目安は${estimate.label}です。`;
   proposalContent.innerHTML = `
-    <div class="result-loading" role="status">
-      <span class="loading-leaf">🌱</span>
-      <div class="loading-lines"><span></span><span></span><span></span></div>
+    <div class="result-loading" role="status" aria-live="polite">
+      <div class="loading-scenery" aria-hidden="true">
+        <span class="loading-sun">☀️</span>
+        <span class="loading-cloud cloud-one">☁️</span>
+        <span class="loading-cloud cloud-two">☁️</span>
+        <span id="loadingPlant" class="loading-plant">🌱</span>
+        <span class="loading-ground"></span>
+      </div>
+      <p class="loading-kicker">ちびプランを作成中</p>
+      <p id="loadingMessage" class="loading-message">${loadingSteps[0]}</p>
+      <div class="loading-progress" aria-hidden="true">
+        <span id="loadingProgressBar"></span>
+      </div>
+      <p class="loading-estimate">完成まで ${estimate.label}</p>
+      <div class="loading-step-dots" aria-hidden="true">
+        <span class="active"></span><span></span><span></span><span></span>
+      </div>
+      <p class="loading-note">画面はそのままで、のんびりお待ちください。</p>
     </div>
   `;
+
+  const startedAt = Date.now();
+  const progressBar = document.getElementById("loadingProgressBar");
+  const message = document.getElementById("loadingMessage");
+  const plant = document.getElementById("loadingPlant");
+  const dots = Array.from(document.querySelectorAll(".loading-step-dots span"));
+  const plants = ["🌱", "🌿", "🪴", "🌳"];
+
+  proposalLoadingTimer = setInterval(() => {
+    const elapsedSeconds = (Date.now() - startedAt) / 1000;
+    const progress = Math.min(92, 8 + (elapsedSeconds / estimate.targetSeconds) * 82);
+    const stepIndex = Math.min(3, Math.floor(progress / 25));
+
+    progressBar.style.width = `${progress}%`;
+    message.textContent = elapsedSeconds > estimate.targetSeconds * 1.25
+      ? "いつもより丁寧に確認しています"
+      : loadingSteps[stepIndex];
+    plant.textContent = plants[stepIndex];
+    dots.forEach((dot, index) => {
+      dot.classList.toggle("active", index === stepIndex);
+      dot.classList.toggle("done", index < stepIndex);
+    });
+  }, 800);
 }
 
 function renderPlan(plan) {
+  clearProposalLoading();
   proposalTitle.textContent = plan.title;
   proposalLead.textContent = plan.summary;
   proposalContent.innerHTML = "";
@@ -630,6 +697,7 @@ function renderPlan(plan) {
 }
 
 function showProposalError(message) {
+  clearProposalLoading();
   proposalTitle.textContent = "プランを作成できませんでした";
   proposalLead.textContent = "入力内容は残っています。戻ってもう一度お試しください。";
   proposalContent.innerHTML = "";
@@ -651,7 +719,7 @@ makePlanBtn.addEventListener("click", async () => {
   const condition = getUserCondition();
   const promptJson = createPromptJson(condition);
 
-  showProposalLoading();
+  showProposalLoading(condition);
   showScreen(proposalScreen);
   window.scrollTo({ top: 0, behavior: "smooth" });
 
