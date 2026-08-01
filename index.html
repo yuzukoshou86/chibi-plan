@@ -31,11 +31,13 @@
         <p class="card-title">今日はどんな一日にしたい？</p>
         <div class="check-grid">
           <label class="check-item"><input type="checkbox" name="dayMood" value="癒されたい"> 🌿 癒されたい</label>
-          <label class="check-item"><input type="checkbox" name="dayMood" value="ワクワクしたい"> ✨ ワクワクしたい</label>
-          <label class="check-item"><input type="checkbox" name="dayMood" value="リフレッシュしたい"> 🍃 リフレッシュしたい</label>
-          <label class="check-item"><input type="checkbox" name="dayMood" value="学び・体験を楽しみたい"> 🎨 学び・体験を楽しみたい</label>
-          <label class="check-item"><input type="checkbox" name="dayMood" value="思い出を作りたい"> 💛 思い出を作りたい</label>
+          <label class="check-item"><input type="checkbox" name="dayMood" value="自分にご褒美をあげたい"> 🎁 自分にご褒美をあげたい</label>
+          <label class="check-item"><input type="checkbox" name="dayMood" value="季節を感じたい"> 🍃 季節を感じたい</label>
+          <label class="check-item"><input type="checkbox" name="dayMood" value="非日常を味わいたい"> 🎨 非日常を味わいたい</label>
+          <label class="check-item"><input type="checkbox" name="dayMood" value="心を動かされたい"> 💛 心を動かされたい</label>
           <label class="check-item"><input type="checkbox" name="dayMood" value="アクティブに過ごしたい"> 💪 アクティブに過ごしたい</label>
+          <label class="check-item"><input type="checkbox" name="dayMood" value="ドキドキしたい"> 💓 ドキドキしたい</label>
+          <label class="check-item"><input type="checkbox" name="dayMood" value="ハラハラしたい"> 🎢 ハラハラしたい</label>
           <label class="check-item"><input type="checkbox" name="dayMood" value="おまかせ" id="dayRandom"> 🎲 おまかせ</label>
         </div>
       </div>
@@ -130,8 +132,12 @@
 </div>
 
       <div class="card">
-        <label for="budgetSelect">予算（1人当たり）</label>
-        <select id="budgetSelect" class="scroll-select"></select>
+        <label for="budgetInput">予算（1人当たり）</label>
+        <div class="budget-input-wrap">
+          <input id="budgetInput" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="9" placeholder="例：10000" autocomplete="off" aria-describedby="budgetStatus" />
+          <span aria-hidden="true">円</span>
+        </div>
+        <p id="budgetStatus" class="field-status">半角数字で1,000円以上を入力してください。</p>
       </div>
 
       <p id="formMessage" class="form-message">すべての項目を入力してください。</p>

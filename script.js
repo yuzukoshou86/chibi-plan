@@ -7,7 +7,8 @@ const makePlanBtn = document.getElementById("makePlanBtn");
 const backBtn = document.getElementById("backBtn");
 
 const peopleSelect = document.getElementById("peopleSelect");
-const budgetSelect = document.getElementById("budgetSelect");
+const budgetInput = document.getElementById("budgetInput");
+const budgetStatus = document.getElementById("budgetStatus");
 
 const tripButtons = document.querySelectorAll(".trip-type");
 const stayOptions = document.getElementById("stayOptions");
@@ -164,6 +165,18 @@ const FIXED_PROMPT = `
 グループ全体の予算として解釈しないでください。
 概算費用も1人当たりで表示してください。
 
+【安全なハラハラ体験】
+
+ユーザーが「ハラハラしたい」を選択した場合も、安全が確認できる合法的な施設・イベント・管理された体験だけを提案してください。
+以下は提案してはいけません。
+・私有地や立入禁止区域
+・夜間の山道、危険な崖、人気のない場所
+・管理状況や営業状況を確認できない場所
+・危険行為やルール違反が必要な体験
+・事故・事件の現場を娯楽として扱う提案
+
+スリルのある体験を提案する場合は、運営者・安全設備・営業状況を確認し、年齢・身長・健康状態・天候などの利用条件があれば注意事項に記載してください。
+
 【スケジュール】
 
 開始時間から終了時間まで、現実的に移動可能なスケジュールを作成してください。
@@ -266,7 +279,7 @@ function getUserCondition() {
     senses: getCheckedValues("senseMood"),
     departure: startPlaceInput.value.trim(),
     people: `${peopleSelect.value}人`,
-    budget: `${Number(budgetSelect.value).toLocaleString()}円`,
+    budget: `${Number(budgetInput.value).toLocaleString()}円`,
     tripType: tripType,
     startType: startType,
     startTime: startTypeValue === "now"
@@ -331,13 +344,15 @@ function validateForm() {
   const stationIsValid =
     stationValidationState === "valid" &&
     startPlaceInput.value.trim() === validatedStation;
+  const budgetValue = Number(budgetInput.value);
+  const budgetIsValid = /^[0-9]+$/.test(budgetInput.value) && budgetValue >= 1000;
 
   const isValid =
     getCheckedValues("dayMood").length > 0 &&
     getCheckedValues("senseMood").length > 0 &&
     stationIsValid &&
     peopleSelect.value !== "" &&
-    budgetSelect.value !== "" &&
+    budgetIsValid &&
     getSelectedButtonText(".trip-type.selected") !== "" &&
     endHourSelect.value !== "" &&
     endMinuteSelect.value !== "" &&
@@ -350,6 +365,17 @@ function validateForm() {
     formMessage.textContent = isValid
       ? "入力できました。スケジュール作成できます。"
       : "すべての項目を入力してください。";
+  }
+
+  if (budgetInput.value === "") {
+    budgetStatus.textContent = "半角数字で1,000円以上を入力してください。";
+    budgetStatus.className = "field-status";
+  } else if (!budgetIsValid) {
+    budgetStatus.textContent = "1,000円以上を半角数字だけで入力してください。";
+    budgetStatus.className = "field-status error";
+  } else {
+    budgetStatus.textContent = `${budgetValue.toLocaleString()}円（1人当たり）`;
+    budgetStatus.className = "field-status success";
   }
 }
 
@@ -649,7 +675,10 @@ backBtn.addEventListener("click", () => {
 });
 
 peopleSelect.addEventListener("change", validateForm);
-budgetSelect.addEventListener("change", validateForm);
+budgetInput.addEventListener("input", () => {
+  budgetInput.value = budgetInput.value.replace(/[^0-9]/g, "");
+  validateForm();
+});
 
 /* 日帰り・お泊まり */
 tripButtons.forEach((button) => {
@@ -785,14 +814,6 @@ startHourSelect.value = "09";
 startMinuteSelect.value = "00";
 endHourSelect.value = "17";
 endMinuteSelect.value = "00";
-
-for (let budget = 1000; budget <= 50000; budget += 1000) {
-  const option = document.createElement("option");
-  option.value = String(budget);
-  option.textContent = `${budget.toLocaleString()}円`;
-  option.selected = budget === 10000;
-  budgetSelect.appendChild(option);
-}
 
 /* 初期処理 */
 validateForm();
