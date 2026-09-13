@@ -9,6 +9,8 @@ const backBtn = document.getElementById("backBtn");
 const peopleSelect = document.getElementById("peopleSelect");
 const budgetInput = document.getElementById("budgetInput");
 const budgetStatus = document.getElementById("budgetStatus");
+const additionalRequest = document.getElementById("additionalRequest");
+const requestCharacterCount = document.getElementById("requestCharacterCount");
 
 const tripButtons = document.querySelectorAll(".trip-type");
 const stayOptions = document.getElementById("stayOptions");
@@ -281,6 +283,7 @@ function getUserCondition() {
     departure: startPlaceInput.value.trim(),
     people: `${peopleSelect.value}人`,
     budget: `${Number(budgetInput.value).toLocaleString()}円`,
+    additionalRequest: additionalRequest.value.trim(),
     tripType: tripType,
     startType: startType,
     startTime: startTypeValue === "now"
@@ -313,6 +316,7 @@ function createPromptText(condition) {
 終了時間：${condition.endTime}
 宿泊日数：${condition.stayNights || "対象外"}
 宿泊先の提案：${condition.hotelSuggestion}
+追加の希望：${condition.additionalRequest || "なし"}
 
 【今日はどんな一日にしたい？】
 ${condition.dayTheme.map((item) => `・${item}`).join("\n")}
@@ -746,6 +750,10 @@ peopleSelect.addEventListener("change", validateForm);
 budgetInput.addEventListener("input", () => {
   budgetInput.value = budgetInput.value.replace(/[^0-9]/g, "");
   validateForm();
+});
+
+additionalRequest.addEventListener("input", () => {
+  requestCharacterCount.textContent = `${additionalRequest.value.length} / 300`;
 });
 
 /* 日帰り・お泊まり */

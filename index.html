@@ -140,6 +140,17 @@
         <p id="budgetStatus" class="field-status">半角数字で1,000円以上を入力してください。</p>
       </div>
 
+      <div class="card">
+        <div class="optional-field-heading">
+          <label for="additionalRequest">追加の希望</label>
+          <span>任意</span>
+        </div>
+        <textarea id="additionalRequest" maxlength="300" rows="4" placeholder="例：甘いものが食べたい、歩く時間を短くしたい"></textarea>
+        <p class="field-status request-field-status">
+          自由に希望を書いてください。<span id="requestCharacterCount">0 / 300</span>
+        </p>
+      </div>
+
       <p id="formMessage" class="form-message">すべての項目を入力してください。</p>
 
       <button id="makePlanBtn" class="main-btn" disabled>
